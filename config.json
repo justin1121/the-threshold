@@ -1,0 +1,9 @@
+{
+  "host": "TODO",
+  "dbhost": "TODO",
+  "dbport": "TODO",
+  "log": "TODO",
+  "go-sectret-key": "TODO",
+  "go-client-id": "TODO",
+  "go-client-secret": "TODO"
+}

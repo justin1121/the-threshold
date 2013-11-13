@@ -1,0 +1,17 @@
+{
+  "name": "circumpuncT",
+  "version": "0.0.2",
+  "private": true,
+  "dependencies": {
+    "express": "3.x",
+    "twilio": "*",
+    "socket.io": "*",
+    "redis": "*",
+    "ejs": "*",
+    "goinstant-rest": "~1.0.0"
+  },
+  "engines": {
+    "node": "0.10.x",
+    "npm": "1.2.x"
+  }
+}

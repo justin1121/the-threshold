@@ -1,0 +1,83 @@
+<html>
+<head>
+  <title>Threshold</title>
+  <link rel="icon" href="/favicon.ico" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="/css/bootstrap.min.css" rel="stylesheet">
+  <link href="/css/navbar.css" rel="stylesheet">
+
+  <script src="socket.io/socket.io.js"></script>
+</head>
+<body>
+  <div class="container">
+    <% include navbar %>
+    <div class="jumbotron">
+      <h1>Threshold</h1>
+      <p>Text 17786530430</p>
+    </div>
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h3 class="panel-title">What?</h3>
+      </div>
+      <div class="panel-body">
+        Something, Something, Something!
+      </div>
+      <a href="http://circumpunct.ca">
+        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#createModal">
+          Create a room!
+        </button>
+      </a>
+    </div>
+    <ul class="list-group" id='smslist'>
+      <% if(messTime){ %>
+        <% messTime.forEach(function(json){ %>
+          <li class="list-group-item">
+            <% var obj = JSON.parse(json) %>
+            <%= obj.message %>
+            <span class="badge"><%= obj.time %></span>
+          </li>
+        <% }); %>
+      <% } %>
+    </ul>
+  </div>
+  <div class="modal fade" id="createModal" role="dialog" aria-labelledby="createLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+          <h4 class="modal-title">Create a Room:</h4> 
+        </div>
+        <div class="modal-body">
+          <form role="form">
+            <div class="form-group">
+              <label for="nameInput">Room Name</label>
+              <input type="name" class="form-control" id="nameInput" placeholder="Enter Room Name">
+            </div>
+            <div class="form-group">
+              <label for="numberInput">Subscribe Number</label>
+              <input type="tel" class="form-control" id="numberInput" placeholder="Enter Subscribe #">
+            </div>
+            <button type="submit" class="btn btn-primary">Create!</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="https://code.jquery.com/jquery.js"></script>
+  <script src="/js/bootstrap.min.js"></script>
+  <script>
+    $('#nav-threshold').addClass('active');
+
+    <% if(host){ %>
+      var socket = io.connect('<%= host %>');
+
+      socket.on('sms', function(data){
+        var li = $('<li class="list-group-item">').text(data.message);
+        var span = $('<span class="badge">').text(data.time);
+        li.prepend(span);
+        $('#smslist').prepend(li);
+      });
+    <% } %>
+  </script>
+
+</body>
+</html>
