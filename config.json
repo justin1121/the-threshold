@@ -2,8 +2,5 @@
   "host": "circumpunct.ca",
   "dbhost": "127.0.0.1",
   "dbport": "6379",
-  "log": "0",
-  "go-sectret-key": "VlIRJI413-8FOt5lsAYZ0j0xy_uKdbGxAyJ_BpnapQ5KRjr0VyHj0ZT8Q5AQixFoEHbfmh2EGGjYS0qk0-O1YQ",
-  "go-client-id": "0Cb3HWk5kPtxFLBNaUGkpR9osQ4Q9wxxt_OFkmjE_BA",
-  "go-client-secret": "WHx986KRgg6NU_ZTXv2G8GulC2NqKxjnoB4F9nTMqHc"
+  "log": "0"
 }
