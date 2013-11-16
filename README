@@ -6,15 +6,24 @@
  * accessed easily from a few different ways. Including: web interface, text
  * interface.
  *
- * (phone #) - (room)
+ * rooms: rooms -> rooms
  *
- * (room) -> users 
+ * subscribers: (room) -> users 
  *
- * sms-(room) -> messages
+ * subscriptions: (phone #) - (room)
+ *
+ * messages: sms-(room) -> messages
  *
  * Anything surronded in '()' are variables to be filled in with user
  * specified info. '-' characters mean its a key to value pair. '->' 
  * characters mean key to list value.
+ *
+ * Note about admin :
+ * (ANOTHER SIDE NOTE - > this isn't going to work until auth becomes a thing so only I can?)
+ *
+ * Admin is the person who creates the room, is the only person who can destroy
+ * the room. An admin can abdicate their admin status and then the next user.
+ * in the list becomes the admin. Need some sort of message to inform.
  *
  * Redis side note:
  *
