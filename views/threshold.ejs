@@ -27,17 +27,6 @@
         </button>
       </a>
     </div>
-    <ul class="list-group" id='smslist'>
-      <% if(messTime){ %>
-        <% messTime.forEach(function(json){ %>
-          <li class="list-group-item">
-            <% var obj = JSON.parse(json) %>
-            <%= obj.message %>
-            <span class="badge"><%= obj.time %></span>
-          </li>
-        <% }); %>
-      <% } %>
-    </ul>
   </div>
   <div class="modal fade" id="createModal" role="dialog" aria-labelledby="createLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -47,16 +36,18 @@
           <h4 class="modal-title">Create a Room:</h4> 
         </div>
         <div class="modal-body">
-          <form role="form">
-            <div class="form-group">
-              <label for="nameInput">Room Name</label>
-              <input type="name" class="form-control" id="nameInput" placeholder="Enter Room Name">
-            </div>
-            <div class="form-group">
-              <label for="numberInput">Subscribe Number</label>
-              <input type="tel" class="form-control" id="numberInput" placeholder="Enter Subscribe #">
-            </div>
-            <button type="submit" class="btn btn-primary">Create!</button>
+          <div class="input-group">
+            <label for="nameInput">Room Name</label>
+            <input class="form-control" type="name" id="nameInput" placeholder="Enter Room Name">
+          </div>
+          </br>
+          <div class="input-group">
+            <label for="numberInput">Subscribe Number</label>
+            <input class="form-control" type="tel" id="numberInput" placeholder="Enter Subscribe #">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button onclick="sendCreateRoom();" class="btn btn-primary" >Create!</button>
         </div>
       </div>
     </div>
@@ -67,16 +58,22 @@
   <script>
     $('#nav-threshold').addClass('active');
 
-    <% if(host){ %>
-      var socket = io.connect('<%= host %>');
+    var sendCreateRoom = function(){
+      // TODO this doesn't work properly
+      var socket = io.connect('circumpunct.ca');
 
-      socket.on('sms', function(data){
-        var li = $('<li class="list-group-item">').text(data.message);
-        var span = $('<span class="badge">').text(data.time);
-        li.prepend(span);
-        $('#smslist').prepend(li);
+      socket.on('connect', function(){
+        socket.emit('createRoom', { room: $('#nameInput').val(), user: $('#numberInput').val() });
       });
-    <% } %>
+
+      socket.on('roomCreated', function(data){
+        window.location.assign('http://circumpunct.ca/room?r=' + $('#nameInput').val())       
+      });
+
+      socket.on('roomExists', function(data){
+        alert("Room exists, choose another room name!");
+      });
+    };
   </script>
 
 </body>

@@ -1,0 +1,42 @@
+<html>
+<head>
+  <title>Room - <%= room %></title>
+  <link rel="icon" href="/favicon.ico" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="/css/bootstrap.min.css" rel="stylesheet">
+  <link href="/css/navbar.css" rel="stylesheet">
+
+</head>
+<body>
+  <div class="container">
+    <% include navbar %>
+    <div class="jumbotron">
+      <h1>Room - <%= room %></h1>
+      <p>Text 17786530430</p>
+    </div>
+    <ul class="list-group" id='smslist'>
+      <% if(messTime){ %>
+        <% messTime.forEach(function(json){ %>
+          <li class="list-group-item">
+            <% var obj = JSON.parse(json) %>
+            <%= obj.message %>
+            <span class="badge"><%= obj.time %></span>
+          </li>
+        <% }); %>
+      <% } %>
+    </ul>
+  </div>
+  <script src="socket.io/socket.io.js"></script>
+  <script src="/js/jquery.js"></script>
+  <script src="/js/bootstrap.min.js"></script>
+  <script>
+    var socket = io.connect('circumpunct.ca');
+
+    socket.on('sms-<%= room %>', function(data){
+      var li = $('<li class="list-group-item">').text(data.message);
+      var span = $('<span class="badge">').text(data.time);
+      li.prepend(span);
+      $('#smslist').prepend(li);
+    });
+  </script>
+</body>

@@ -4,13 +4,13 @@ var express = require('express'),
     twilio = require('twilio'),
     redis = require('redis'),
     io = require('socket.io').listen(server),
+    dbclient = require('./redis-rooms.js'),
     fs = require('fs')
 
 var port = 80;
-var host = '';
 var dbhost = '';
 var dbport = '';
-var rclient;
+var dbclient;
 
 server.listen(port, function(){
   readConfig();
@@ -26,29 +26,20 @@ app.get('/', function(req, res){
 });
 
 app.get('/threshold', function(req, res){
-  rclient.llen('sms', function(err, reply){
-    var json = {};
-    json.host = host;
-    json.messTime = null;
-    if(!reply){
-      res.render('threshold.ejs', json);
-    }
-    else{
-      rclient.lrange('sms', 0, 9, function(err, reply){
-        json.messTime = reply;
-        res.render('threshold.ejs', json);
-      });
-    }
-  });
+  res.render('threshold.ejs');
+});
 
+app.get('/room', function(req, res){
+  dbclient.sendMessages(req['query']['r'], res);
 });
 
 io.sockets.on('connection', function(socket){
   socket.on('createRoom', function(data){
-    // check if room exists
-    // check is # is valid in CAN and US and doesn't already exist
-    // create room with name
-    // subscribe to room
+    dbclient.createRoom(data.user, data.room, socket);
+  });
+
+  socket.on('destroyRoom', function(data){
+
   });
 
   socket.on('subscribe', function(data){
@@ -61,25 +52,28 @@ io.sockets.on('connection', function(socket){
   });
 });
 
+/* TODO need to create a way of namespacing sockets so not emitting every message
+ * to every socket created */
 app.get('/sms', function(req, res){
-  if(req['query']['clear']){
-    console.log('Deleting SMS list.');
-    clearSMSList();
-    res.send(200);
+  if(req['query']['clear'] == 1){
+    if(req['query']['room'] == undefined){
+      res.send(400);
+    }
+    else{
+      console.log('Deleting SMS list.');
+      dbclient.clearSMSList(req['query']['room']);
+      res.send(204);
+    }
+  }
+  else if(req['query']['clear'] == 2){
+    console.log('Flushing Database');
+    dbclient.flushDb();
+    res.send(204);
   }
   else{
-    var tres = new twilio.TwimlResponse();
-    tres.message("Message Received!");
-    res.send(tres.toString());
-    
-    var mtime = getTimeString();
-    var json = createMessageJSON(req['query']['Body'], mtime);
-    rclient.lpush('sms', json, function(err){
-      if(err){
-        console.log(err);
-      }
-    });
-    io.sockets.emit('sms', { message: req['query']['Body'], time: mtime });
+    var from = req['query']['From'];  
+    from = from.substring(1, from.length);
+    dbclient.forwardMessage(from, req['query']['Body'], res, io);
   }
 });
 
@@ -90,30 +84,15 @@ var readConfig = function(){
     }
 
     var cdata = JSON.parse(data);
-    host = cdata['host'];
     dbhost = cdata['dbhost'];
     dbport = cdata['dbport'];
     setLogging(cdata['log']);
-    connectRedis();
+    connectDb();
   });
 };
 
-var connectRedis = function(){
-  rclient = redis.createClient(dbport, dbhost);
-
-  rclient.on('error', function(err){
-    throw err;
-  });
-
-  console.log("Connected to Redis at", dbhost + ":", dbport);
-};
-
-var clearSMSList = function(){
-  rclient.del('sms', function(err){
-    if(err){
-      console.log(err);
-    }
-  });
+var connectDb = function(){
+  dbclient.connectDb(dbport, dbhost);
 };
 
 var setLogging = function(level){
@@ -122,20 +101,3 @@ var setLogging = function(level){
   }
 };
 
-var getTimeString = function(){
-  var d = new Date();
-  var min = '';
-
-  if(d.getMinutes() < 10){
-    min = '0' + d.getMinutes();
-  }
-  else{
-    min = d.getMinutes();
-  }
-
-  return d.getHours() + ':' + min + ' ' + d.getDate() + '/' + (d.getMonth() + 1) + '/' + d.getFullYear();
-};
-
-var createMessageJSON = function(message, time){
-  return '{"message":"' + message + '","time":"' + time + '"}'
-};
