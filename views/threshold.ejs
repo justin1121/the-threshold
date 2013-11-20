@@ -22,11 +22,73 @@
         Something, Something, Something!
       </div>
       <a href="http://circumpunct.ca">
-        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#createModal">
+        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#createModal"
+                disabled="disabled">
           Create a room!
         </button>
       </a>
     </div>
+    
+    <table class="table">
+      <% if(rooms){ %>
+        <% var even = true %>
+        <% if(rooms.length % 2 == 0){ %>
+          <% var rows = rooms.length / 2 %>
+        <% } %>
+        <% if(rooms.length % 2 != 0){ %>
+          <% var rows = Math.floor(rooms.length / 2) + 1 %>
+          <% var even = false %>
+        <% } %>
+        <% for(i = 0; i < rows; i++){ %>
+          <tr>
+            <td>
+              <div class="panel panel-default">
+                <div class="panel-heading">
+                  <h3 class="panel-title">
+                    <%= rooms[i + i] %> 
+                    <button id="<%= rooms[i + i] %>" type="button" class="btn btn-primary"
+                            onclick="enterRoom(this.id);" disabled="disabled">
+                      Enter 
+                    </button>
+                    <button id="<%= rooms[i + i]%>" type="button" class="btn btn-primary"
+                            onclick="initModal(this.id);" disabled="disabled">
+                      Subscribe
+                    </button>
+                  </h3>
+                </div>
+                <div class="panel-body">
+                  <!-- TODO messages: 10--> 
+                </div>
+              </div>
+            </td>
+            <% if(rooms[i + i + 1] != undefined){ %>
+              <td>
+                <div class="panel panel-default">
+                  <div class="panel-heading">
+                    <h3 class="panel-title">
+                      <%= rooms[i + i + 1] %>
+                      <a href="/room?r=<%= rooms[i + i + 1] %>">
+                        <button id="<%= rooms[i + i + 1] %>" type="button" class="btn btn-primary"
+                                disabled="disabled">
+                          Enter
+                        </button>
+                      </a>
+                      <button id="<%= rooms[i + i + 1] %>" type="button" class="btn btn-primary"
+                              onclick="initModal(this.id);" disabled="disabled">
+                        Subscribe
+                      </button>
+                    </h3>
+                  </div>
+                  <div class="panel-body">
+                    <!-- TODO messages: 10--> 
+                  </div>
+                </div>
+              </td>
+            <% } %>  
+          </tr>
+        <% } %> 
+      <% } %>
+    </table>
   </div>
   <div class="modal fade" id="createModal" role="dialog" aria-labelledby="createLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -38,16 +100,35 @@
         <div class="modal-body">
           <div class="input-group">
             <label for="nameInput">Room Name</label>
-            <input class="form-control" type="name" id="nameInput" placeholder="Enter Room Name">
+            <input class="form-control" type="name" id="nameInput" placeholder="Enter Room Name" maxlength=10>
           </div>
           </br>
           <div class="input-group">
             <label for="numberInput">Subscribe Number</label>
-            <input class="form-control" type="tel" id="numberInput" placeholder="Enter Subscribe #">
+            <input class="form-control" type="tel" id="numberInput" placeholder="Enter Subscribe #" maxlength=11>
           </div>
         </div>
         <div class="modal-footer">
           <button onclick="sendCreateRoom();" class="btn btn-primary" >Create!</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal fade" id="subModal" role="dialog" aria-labelledby="subLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+          <h4 class="modal-title">Subscribe to </h4><h4 id="subModalName" class="modal-title"></h4> 
+        </div>
+        <div class="modal-body">
+          <div class="input-group">
+            <label for="numberInput">Subscribe Number</label>
+            <input class="form-control" type="tel" id="snumberInput" placeholder="Enter Subscribe #" maxlength=11>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button onclick="sendSubscribeRoom();" class="btn btn-primary">Subscribe!</button>
         </div>
       </div>
     </div>
@@ -58,21 +139,49 @@
   <script>
     $('#nav-threshold').addClass('active');
 
+    var socket = io.connect('circumpunct.ca');
+    socket.on('connect', function(){
+      // TODO i dont like this
+      $(":button").attr("disabled", false);
+    });
+
+    socket.on('disconnect', function(){
+      
+    });
+
+    socket.on('roomCreated', function(data){
+      window.location.assign('http://circumpunct.ca/room?r=' + $('#nameInput').val());       
+    });
+
+    socket.on('roomSubscribed', function(){
+      window.location.assign('http://circumpunct.ca/room?r=' + $('#subModalName').text());
+    });
+
+    socket.on('roomExists', function(data){
+      alert("Room exists, choose another room name!");
+    });
+
     var sendCreateRoom = function(){
-      // TODO this doesn't work properly
-      var socket = io.connect('circumpunct.ca');
+      var room = $('#nameInput').val();
+      var user = $('#numberInput').val();
 
-      socket.on('connect', function(){
-        socket.emit('createRoom', { room: $('#nameInput').val(), user: $('#numberInput').val() });
-      });
+      socket.emit('createRoom', { room: room, user: user });
+    };
 
-      socket.on('roomCreated', function(data){
-        window.location.assign('http://circumpunct.ca/room?r=' + $('#nameInput').val())       
-      });
+    var sendSubscribeRoom = function(){
+      var room = $('#subModalName').text();
+      var user = $('#snumberInput').val();
 
-      socket.on('roomExists', function(data){
-        alert("Room exists, choose another room name!");
-      });
+      socket.emit('subscribe', {room: room, user: user});
+    };
+
+    var enterRoom = function(id){
+      window.location.assign('http://circumpunct.ca/room?r=' + id);
+    };
+
+    var initModal = function(id){
+      $("#subModalName").text(id);
+      $("#subModal").modal();
     };
   </script>
 
