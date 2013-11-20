@@ -26,7 +26,7 @@ app.get('/', function(req, res){
 });
 
 app.get('/threshold', function(req, res){
-  res.render('threshold.ejs');
+  dbclient.sendAllRooms(res);
 });
 
 app.get('/room', function(req, res){
@@ -43,8 +43,7 @@ io.sockets.on('connection', function(socket){
   });
 
   socket.on('subscribe', function(data){
-    // check is # is valid in CAN and US and make sure it actually exists
-
+    dbclient.subscribeRoom(data.user, data.room, socket, 1);
   });
 
   socket.on('unsubscribe', function(data){
@@ -53,7 +52,7 @@ io.sockets.on('connection', function(socket){
 });
 
 /* TODO need to create a way of namespacing sockets so not emitting every message
- * to every socket created */
+ * TODO to every socket created, roooooooms*/
 app.get('/sms', function(req, res){
   if(req['query']['clear'] == 1){
     if(req['query']['room'] == undefined){

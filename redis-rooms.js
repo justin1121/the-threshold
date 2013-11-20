@@ -22,7 +22,7 @@ var createRoom = function(user, room, socket){
           console.log(err);
         }
       });
-      subscribeRoom(user, room, socket); 
+      subscribeRoom(user, room, socket, 0); 
       rclient.lpush('rooms', room, function(err){
         if(err){
           console.log(err);
@@ -58,9 +58,11 @@ var destroyRoom = function(room, socket){
   socket.emit('roomDeleted');
 };
 
-var subscribeRoom = function(user, room, socket){
+var subscribeRoom = function(user, room, socket, emit){
   rclient.set(user, room, function(err){
-    socket.emit('roomSubscribed');
+    if(emit){
+      socket.emit('roomSubscribed');
+    }
   });
 };
 
@@ -102,8 +104,8 @@ var forwardMessage = function(user, mess, res, io){
       res.send(tres.toString());
     }
     else{
-      var mtime = getTimeString();
-      var json = createMessageJSON(mess, mtime);
+      var mtime = getTime();
+      var json = '{"message":"' + mess + '","time":"' + mtime + '"}';
 
       rclient.lpush('sms-' + reply, json, function(err){
         if(err){
@@ -113,6 +115,22 @@ var forwardMessage = function(user, mess, res, io){
       tres.message("Message Forwarded to " + reply + "!");
       res.send(tres.toString());
       io.sockets.emit('sms-' + reply, { message: mess, time: mtime });
+    }
+  });
+};
+
+var sendAllRooms = function(res){  
+  rclient.llen('rooms', function(err, reply){
+    var json = {};
+    json.rooms = null;
+    if(reply == 0){
+      res.render('threshold.ejs', json);
+    }
+    else{
+      rclient.lrange('rooms', 0, reply - 1, function(err, reply){
+        json.rooms = reply;
+        res.render('threshold.ejs', json);
+      });
     }
   });
 };
@@ -131,10 +149,15 @@ var flushDb = function(){
 
 // TODO move these to own lib
 var createMessageJSON = function(message, time){
-  return '{"message":"' + message + '","time":"' + time + '"}'
+  return 
 };
 
-var getTimeString = function(){
+var getTime = function(){
+  var d = new Date();
+  return d.getTime();
+};
+
+/*var getTimeString = function(){
   var d = new Date();
   var min = '';
 
@@ -146,7 +169,7 @@ var getTimeString = function(){
   }
 
   return d.getHours() + ':' + min + ' ' + d.getDate() + '/' + (d.getMonth() + 1) + '/' + d.getFullYear();
-};
+}; */
 
 exports.clearSMSList = clearSMSList
 exports.sendMessages = sendMessages
@@ -157,3 +180,4 @@ exports.createRoom = createRoom
 exports.connectDb = connectDb
 exports.flushDb = flushDb
 exports.forwardMessage = forwardMessage
+exports.sendAllRooms = sendAllRooms
