@@ -20,7 +20,7 @@
           <li class="list-group-item">
             <% var obj = JSON.parse(json) %>
             <%= obj.message %>
-            <span class="badge"><%= obj.time %></span>
+            <span style="display:none;" class="badge"><%= obj.time %></span>
           </li>
         <% }); %>
       <% } %>
@@ -32,11 +32,38 @@
   <script>
     var socket = io.connect('circumpunct.ca');
 
-    socket.on('sms-<%= room %>', function(data){
-      var li = $('<li class="list-group-item">').text(data.message);
-      var span = $('<span class="badge">').text(data.time);
-      li.prepend(span);
-      $('#smslist').prepend(li);
+    $(document).ready(function(){
+      socket.on('sms-<%= room %>', function(data){
+        var li = $('<li class="list-group-item">').text(data.message);
+        var span = $('<span class="badge">').text(getTimeString(data.time));
+        li.prepend(span);
+        $('#smslist').prepend(li);
+      });
+      
+      convertTimes();
     });
+
+    // TODO test speeds with a lot of messages
+    var convertTimes = function(){
+      $(".badge").each(function(){
+        $(this).text(getTimeString($(this).text()))
+        $(this).css("display", "");
+      });
+    };
+
+    var getTimeString = function(milli){
+      var d = new Date(parseInt(milli));
+
+      var min = '';
+
+      if(d.getMinutes() < 10){
+        min = '0' + d.getMinutes();
+      }
+      else{
+        min = d.getMinutes();
+      }
+
+      return d.getHours() + ':' + min + ' ' + d.getDate() + '/' + (d.getMonth() + 1) + '/' + d.getFullYear();
+    };
   </script>
 </body>
