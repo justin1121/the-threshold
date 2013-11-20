@@ -1,17 +1,21 @@
 {
-  "name": "circumpuncT",
-  "version": "0.0.2",
+  "name": "circumpunct",
+  "version": "0.0.3",
   "private": true,
   "dependencies": {
-    "express": "3.x",
-    "twilio": "*",
-    "socket.io": "*",
-    "redis": "*",
-    "ejs": "*",
-    "goinstant-rest": "~1.0.0"
+    "express": "3.4.4",
+    "twilio": "1.4.0",
+    "socket.io": "0.9.16",
+    "redis": "0.9.0",
+    "ejs": "0.8.4"
   },
   "engines": {
     "node": "0.10.x",
     "npm": "1.2.x"
+  },
+  "devDependencies": {
+    "grunt": "~0.4.1",
+    "grunt-contrib-jshint": "~0.7.2",
+    "grunt-contrib-uglify": "~0.2.7"
   }
 }
