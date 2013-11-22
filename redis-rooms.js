@@ -157,27 +157,13 @@ var getTime = function(){
   return d.getTime();
 };
 
-/*var getTimeString = function(){
-  var d = new Date();
-  var min = '';
-
-  if(d.getMinutes() < 10){
-    min = '0' + d.getMinutes();
-  }
-  else{
-    min = d.getMinutes();
-  }
-
-  return d.getHours() + ':' + min + ' ' + d.getDate() + '/' + (d.getMonth() + 1) + '/' + d.getFullYear();
-}; */
-
-exports.clearSMSList = clearSMSList
-exports.sendMessages = sendMessages
-exports.unsubscribeRoom = unsubscribeRoom
-exports.subscribeRoom = subscribeRoom
-exports.destroyRoom = destroyRoom
-exports.createRoom = createRoom
-exports.connectDb = connectDb
-exports.flushDb = flushDb
-exports.forwardMessage = forwardMessage
-exports.sendAllRooms = sendAllRooms
+exports.clearSMSList = clearSMSList;
+exports.sendMessages = sendMessages;
+exports.unsubscribeRoom = unsubscribeRoom;
+exports.subscribeRoom = subscribeRoom;
+exports.destroyRoom = destroyRoom;
+exports.createRoom = createRoom;
+exports.connectDb = connectDb;
+exports.flushDb = flushDb;
+exports.forwardMessage = forwardMessage;
+exports.sendAllRooms = sendAllRooms;
