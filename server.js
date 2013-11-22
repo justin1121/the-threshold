@@ -4,12 +4,14 @@ var express = require('express'),
     twilio = require('twilio'),
     redis = require('redis'),
     io = require('socket.io').listen(server),
+    fs = require('fs'),
     dbclient = require('./redis-rooms.js'),
-    fs = require('fs')
+    auth = require('./auth.js');
 
 var port = 80;
 var dbhost = '';
 var dbport = '';
+var authConnString = '';
 var dbclient;
 
 server.listen(port, function(){
@@ -20,9 +22,30 @@ server.listen(port, function(){
 
 app.use(express.static(__dirname + '/public'));
 app.use(express.favicon(__dirname + '/public/images/favicon.ico'));
+app.use(express.bodyParser());
 
 app.get('/', function(req, res){
   res.render('circumpunct.ejs');
+});
+
+app.get('/admin', function(req, res){
+  var json = {};
+  json.err = 0;
+  res.render('auth.ejs', json);
+});
+
+// TODO use socket io?
+app.post('/admin', function(req, res){
+  auth.authenticate(req['body']['inputUser'], req['body']['inputPass'], authConnString, function(auth){
+    if(auth){
+      dbclient.sendAllRooms(res);
+    }
+    else{
+      var json = {};
+      json.err = 1;
+      res.render('auth.ejs', json);
+    }
+  });
 });
 
 app.get('/threshold', function(req, res){
@@ -86,6 +109,7 @@ var readConfig = function(){
     dbhost = cdata['dbhost'];
     dbport = cdata['dbport'];
     setLogging(cdata['log']);
+    authConnString = cdata['authConnString'];
     connectDb();
   });
 };

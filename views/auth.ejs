@@ -1,0 +1,37 @@
+<html>
+<head>
+  <title>Threshold - Auth</title>
+  <link rel="icon" href="/favicon.ico" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="/css/bootstrap.min.css" rel="stylesheet">
+  <link href="/css/navbar.css" rel="stylesheet">
+
+</head>
+<body>
+  <div class="container">
+    <% include navbar %>
+    <div class="jumbotron">
+      <h1>Auth</h1>
+      <form role="form" action="admin" method="post">
+        <div class="form-group">
+          <label for="inputUser">User name:</label>
+          <input type="text" class="form-control" name="inputUser" placeholder="Enter user name...">
+        </div>
+        <% if(err == 1){ %>
+          <div class="form-group has-error">
+            <label for="inputPass">Password:</label>
+            <input type="password" class="form-control" name="inputPass" placeholder="Enter password...">
+          </div>
+        <% } %>
+        <% if(err == 0){ %>
+          <div class="form-group">
+            <label for="inputPass">Password:</label>
+            <input type="password" class="form-control" name="inputPass" placeholder="Enter password...">
+          </div>
+        <% } %>
+        <button type="submit" class="btn btn-primary">Authenticate</button>
+      </form>
+    </div>
+  </div>
+</body>
+
