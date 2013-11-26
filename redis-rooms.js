@@ -104,7 +104,7 @@ var forwardMessage = function(user, mess, res, io){
       res.send(tres.toString());
     }
     else{
-      var mtime = getTime();
+      var mtime = (new Date).getTime();
       var json = '{"message":"' + mess + '","time":"' + mtime + '"}';
 
       rclient.lpush('sms-' + reply, json, function(err){
@@ -145,16 +145,6 @@ var clearSMSList = function(room){
 
 var flushDb = function(){
   rclient.flushdb();
-};
-
-// TODO move these to own lib
-var createMessageJSON = function(message, time){
-  return 
-};
-
-var getTime = function(){
-  var d = new Date();
-  return d.getTime();
 };
 
 exports.clearSMSList = clearSMSList;
