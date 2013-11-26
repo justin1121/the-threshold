@@ -17,13 +17,13 @@
           <label for="inputUser">User name:</label>
           <input type="text" class="form-control" name="inputUser" placeholder="Enter user name...">
         </div>
-        <% if(err == 1){ %>
+        <% if(err){ %>
           <div class="form-group has-error">
             <label for="inputPass">Password:</label>
             <input type="password" class="form-control" name="inputPass" placeholder="Enter password...">
           </div>
         <% } %>
-        <% if(err == 0){ %>
+        <% if(!err){ %>
           <div class="form-group">
             <label for="inputPass">Password:</label>
             <input type="password" class="form-control" name="inputPass" placeholder="Enter password...">

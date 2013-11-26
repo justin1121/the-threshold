@@ -23,6 +23,9 @@ server.listen(port, function(){
 app.use(express.static(__dirname + '/public'));
 app.use(express.favicon(__dirname + '/public/images/favicon.ico'));
 app.use(express.bodyParser());
+app.use(express.cookieParser());
+app.use(express.cookieSession({secret: '19920606', 
+                               cookie: {maxAge: 3600000}}));
 
 app.get('/', function(req, res){
   res.render('circumpunct.ejs');
@@ -31,13 +34,19 @@ app.get('/', function(req, res){
 app.get('/admin', function(req, res){
   var json = {};
   json.err = 0;
-  res.render('auth.ejs', json);
+  if(!req.session.auth){
+    res.render('auth.ejs', json);
+  }
+  else{
+    dbclient.sendAllRooms(res);
+  }
 });
 
 // TODO use socket io?
 app.post('/admin', function(req, res){
   auth.authenticate(req['body']['inputUser'], req['body']['inputPass'], authConnString, function(auth){
     if(auth){
+      req.session.auth = 1;
       dbclient.sendAllRooms(res);
     }
     else{
@@ -45,7 +54,7 @@ app.post('/admin', function(req, res){
       json.err = 1;
       res.render('auth.ejs', json);
     }
-  });
+  }); 
 });
 
 app.get('/threshold', function(req, res){
