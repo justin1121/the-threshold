@@ -1,57 +1,60 @@
-/* 
- * Redis Infrastrucutre:
- *
- * Need to create a background API for dealing with the different functions
- * concerning the below infrastructure. The API will then be able to be
- * accessed easily from a few different ways. Including: web interface, text
- * interface.
- *
- * rooms: rooms -> rooms
- *
- * subscribers: (room) -> users 
- *
- * subscriptions: (phone #) - (room)
- *
- * messages: sms-(room) -> messages
- *
- * Anything surronded in '()' are variables to be filled in with user
- * specified info. '-' characters mean its a key to value pair. '->' 
- * characters mean key to list value.
- *
- * Note about admin :
- * (ANOTHER SIDE NOTE - > this isn't going to work until auth becomes a thing so only I can?)
- *
- * Admin is the person who creates the room, is the only person who can destroy
- * the room. An admin can abdicate their admin status and then the next user.
- * in the list becomes the admin. Need some sort of message to inform.
- *
- * Redis side note:
- *
- * Investigate just putting messages into redis and have a pub-sub
- * system where it forwards the message out to clients when it gets added.
- * Might scale better? Could have messages coming in from other services 
- * other then just the current twilio GET request. Might cause delay, but
- * probably not, just seems a little weird to have two data sources feeding
- * the app.
- *
- * Redis vs. Postgres:
- *
- * Might make a neat drop in replacement for redis and use postgres and maybe
- * eventually do some A/B testing and see which ones scales better. Problem
- * with this is getting enough traffic where these things could be stressed
- * in some way or another.
- *
- * Subscribing to more than on room?
- *
- * Not sure how going to handle this...maybe doesn't make sense seeing as
- * user receiving the message to their phone would have to parse out the
- * differences in the single stream. I think maybe this is where text message
- * meta data being parsed out by an android app would come in handy. Side note:
- * a twitter bootstrap like thing just came out for android. Anyway kitkat 4.4
- * comes with SMS apis, so maybe can use this to receive text messages from
- * certain numbers and parse out the meta data to route messages. Hopefully
- * these SMS apis will be backported.
- *
- */
+Redis Infrastrucutre:
 
+Need to create a background API for dealing with the different functions
+concerning the below infrastructure. The API will then be able to be
+accessed easily from a few different ways. Including: web interface, text
+interface.
 
+rooms: rooms -> rooms
+
+subscribers: (room) -> users 
+
+subscriptions: (phone #) - (room)
+
+messages: sms-(room) -> messages
+
+Anything surronded in '()' are variables to be filled in with user
+specified info. '-' characters mean its a key to value pair. '->' 
+characters mean key to list value.
+
+Note about admin :
+(ANOTHER SIDE NOTE - > this isn't going to work until auth becomes a thing so only I can?)
+
+Admin is the person who creates the room, is the only person who can destroy
+the room. An admin can abdicate their admin status and then the next user.
+in the list becomes the admin. Need some sort of message to inform.
+
+Redis side note:
+
+Investigate just putting messages into redis and have a pub-sub
+system where it forwards the message out to clients when it gets added.
+Might scale better? Could have messages coming in from other services 
+other then just the current twilio GET request. Might cause delay, but
+probably not, just seems a little weird to have two data sources feeding
+the app.
+
+Redis vs. Postgres:
+
+Might make a neat drop in replacement for redis and use postgres and maybe
+eventually do some A/B testing and see which ones scales better. Problem
+with this is getting enough traffic where these things could be stressed
+in some way or another.
+
+Subscribing to more than on room?
+
+Not sure how going to handle this...maybe doesn't make sense seeing as
+user receiving the message to their phone would have to parse out the
+differences in the single stream. I think maybe this is where text message
+meta data being parsed out by an android app would come in handy. Side note:
+a twitter bootstrap like thing just came out for android. Anyway kitkat 4.4
+comes with SMS apis, so maybe can use this to receive text messages from
+certain numbers and parse out the meta data to route messages. Hopefully
+these SMS apis will be backported.
+
+Socket.IO - TODO
+
+I think I have over used socket.io so far and would like to change a lot of the
+threshold page to just rely on http requests. It was nice to use it a bit
+and figure out some interesting ways to do things, but I have reinvented things
+where http requests can get the job done. Socket.IO can stick around for pushing
+messages to the rooms page though...
