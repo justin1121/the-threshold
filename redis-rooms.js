@@ -45,7 +45,6 @@ var destroyRoom = function(room, socket){
 
   rclient.del('sms-' + room, function(err){
     if(err){
-      console.log(err);
     }
   });
   
@@ -55,15 +54,17 @@ var destroyRoom = function(room, socket){
     }
   });
 
-  socket.emit('roomDeleted');
+  socket.emit('roomDestroyed', {room: room});
 };
 
 var subscribeRoom = function(user, room, socket, emit){
-  rclient.set(user, room, function(err){
-    if(emit){
-      socket.emit('roomSubscribed');
-    }
-  });
+  if(user != ''){
+    rclient.set(user, room, function(err){
+      if(emit){
+        socket.emit('roomSubscribed');
+      }
+    });
+  }
 };
 
 var unsubscribeRoom = function(user, room, socket){
@@ -119,10 +120,11 @@ var forwardMessage = function(user, mess, res, io){
   });
 };
 
-var sendAllRooms = function(res){  
+var sendAllRooms = function(res, auth){  
   rclient.llen('rooms', function(err, reply){
     var json = {};
     json.rooms = null;
+    json.auth = auth;
     if(reply == 0){
       res.render('threshold.ejs', json);
     }

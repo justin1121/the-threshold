@@ -41,7 +41,7 @@
         <% } %>
         <% for(i = 0; i < rows; i++){ %>
           <tr>
-            <td>
+            <td id='<%= rooms[i + i]%>wid'>
               <div class="panel panel-default">
                 <div class="panel-heading">
                   <h3 class="panel-title">
@@ -54,6 +54,12 @@
                             onclick="initModal(this.id);" disabled="disabled">
                       Subscribe
                     </button>
+                    <% if(auth){ %>
+                      <button id="<%= rooms[i + i]%>" type="button" class="btn btn-danger"
+                              onclick="deleteRoom(this.id);" disabled="disabled">
+                        Delete 
+                      </button>
+                    <% } %>
                   </h3>
                 </div>
                 <div class="panel-body">
@@ -62,7 +68,7 @@
               </div>
             </td>
             <% if(rooms[i + i + 1] != undefined){ %>
-              <td>
+              <td id='<%= rooms[i + i + 1]%>wid'>
                 <div class="panel panel-default">
                   <div class="panel-heading">
                     <h3 class="panel-title">
@@ -77,6 +83,12 @@
                               onclick="initModal(this.id);" disabled="disabled">
                         Subscribe
                       </button>
+                      <% if(auth){ %>
+                        <button id="<%= rooms[i + i + 1]%>" type="button" class="btn btn-danger"
+                                onclick="deleteRoom(this.id);" disabled="disabled">
+                          Delete 
+                        </button>
+                      <% } %>
                     </h3>
                   </div>
                   <div class="panel-body">
@@ -141,7 +153,6 @@
 
     var socket = io.connect('circumpunct.ca');
     socket.on('connect', function(){
-      // TODO i dont like this
       $(":button").attr("disabled", false);
     });
 
@@ -161,12 +172,25 @@
       alert("Room exists, choose another room name!");
     });
 
+    <% if(auth){ %>
+      socket.on('roomDestroyed', function(data){
+        console.log(data);
+        $('#' + data.room + 'wid').remove();
+      });
+    <% } %>
+
     var sendCreateRoom = function(){
       var room = $('#nameInput').val();
       var user = $('#numberInput').val();
 
       socket.emit('createRoom', { room: room, user: user });
     };
+
+    <% if(auth){ %>
+      var deleteRoom = function(id){
+        socket.emit('destroyRoom', {room: id});
+      };
+    <% } %>
 
     var sendSubscribeRoom = function(){
       var room = $('#subModalName').text();

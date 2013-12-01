@@ -38,16 +38,15 @@ app.get('/admin', function(req, res){
     res.render('auth.ejs', json);
   }
   else{
-    dbclient.sendAllRooms(res);
+    dbclient.sendAllRooms(res, 1);
   }
 });
 
-// TODO use socket io?
 app.post('/admin', function(req, res){
   auth.authenticate(req['body']['inputUser'], req['body']['inputPass'], authConnString, function(auth){
     if(auth){
       req.session.auth = 1;
-      dbclient.sendAllRooms(res);
+      dbclient.sendAllRooms(res, 1);
     }
     else{
       var json = {};
@@ -58,7 +57,7 @@ app.post('/admin', function(req, res){
 });
 
 app.get('/threshold', function(req, res){
-  dbclient.sendAllRooms(res);
+  dbclient.sendAllRooms(res, 0);
 });
 
 app.get('/room', function(req, res){
@@ -71,7 +70,7 @@ io.sockets.on('connection', function(socket){
   });
 
   socket.on('destroyRoom', function(data){
-
+    dbclient.destroyRoom(data.room, socket); 
   });
 
   socket.on('subscribe', function(data){
