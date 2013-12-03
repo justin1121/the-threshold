@@ -24,9 +24,11 @@
       <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#createModal">
         Create a room!
       </button>
-      <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#subModal">
-        Subscribe to a room!
-      </button>
+      <% if(rooms){ %>
+        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#subModal">
+          Subscribe to a room!
+        </button>
+      <% } %>
     </div>
     
     <table class="table">
@@ -143,7 +145,7 @@
             <div class="form-group">
               <label for="numberInput">Subscribe Room</label>
               <select id="formSelect" class="form-control" name="snameInput"> 
-                <% if(rooms){%>
+                <% if(rooms){ %>
                   <% rooms.forEach(function(rm){ %>
                     <option><%= rm %></option> 
                   <% }) %>
@@ -179,6 +181,7 @@
       window.location.assign("/room?r=" + id);
     };
 
+    // TODO ajax POST?
     var deleteRoom = function(id){
       window.location.assign("/delete?r=" + id);
     };
