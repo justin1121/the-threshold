@@ -123,6 +123,7 @@ var forwardMessage = function(user, mess, res, io){
       });
       tres.message("Message Forwarded to " + reply + "!");
       res.send(tres.toString());
+      // TODO look into doing websockets
       io.sockets.emit('sms-' + reply, { message: mess, time: mtime });
     }
   });
