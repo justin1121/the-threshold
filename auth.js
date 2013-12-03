@@ -1,8 +1,6 @@
 var crypto = require('crypto'),
     pg = require('pg');
 
-// TODO add sessions and stuff
-
 var createAuth = function(user, pass, connString){
   pg.connect(connString, function(err, client, done){
     if(err){
