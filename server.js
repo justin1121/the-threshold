@@ -31,14 +31,21 @@ app.get('/', function(req, res){
   res.render('circumpunct.ejs');
 });
 
+// TODO need an auth page so can redirect from it
 app.get('/admin', function(req, res){
-  var json = {};
-  json.err = 0;
   if(!req.session.auth){
+    var json = {};
+    json.err = 0;
     res.render('auth.ejs', json);
   }
   else{
-    dbclient.sendAllRooms(res, 1);
+    dbclient.getAllRooms(function(reply){
+      var json = {};              
+      json.rooms = reply;
+      json.auth = 1;
+      json.err = 0; 
+      res.render('threshold.ejs', json);
+    });
   }
 });
 
@@ -46,7 +53,13 @@ app.post('/admin', function(req, res){
   auth.authenticate(req['body']['inputUser'], req['body']['inputPass'], authConnString, function(auth){
     if(auth){
       req.session.auth = 1;
-      dbclient.sendAllRooms(res, 1);
+      dbclient.getAllRooms(function(reply){
+        var json = {};              
+        json.rooms = reply;
+        json.auth = 1;
+        json.err = 0; 
+        res.render('threshold.ejs', json);
+      });
     }
     else{
       var json = {};
@@ -57,29 +70,63 @@ app.post('/admin', function(req, res){
 });
 
 app.get('/threshold', function(req, res){
-  dbclient.sendAllRooms(res, 0);
+  var json = {};              
+  switch(req['query']['err']){
+    case 1:
+      json.err = 1;
+      json.errmsg = "Room exists!";
+      break;
+    case 2:
+      json.err = 1;
+      json.errmsg = "Room does not exists!";
+      break;
+    default:
+      json.err = 0;
+  }
+
+  dbclient.getAllRooms(function(reply){
+    json.rooms = reply;
+    json.auth = 0;
+    res.render('threshold.ejs', json);
+  });
+});
+
+app.post('/room', function(req, res){
+  if(req['body']['nameInput'] && req['body']['numberInput']){
+    dbclient.createRoom(req['body']['numberInput'], req['body']['nameInput'], function(state){
+      if(state){
+        dbclient.sendMessages(req['body']['nameInput'], res);
+      }
+      else{
+        res.redirect('/threshold?err=1');
+      }
+    });
+  }
+  else if(req['body']['snameInput'] && req['body']['snumberInput']){
+    dbclient.subscribeRoom(req['body']['snumberInput'], req['body']['snameInput'], function(){
+      dbclient.sendMessages(req['body']['snameInput'], res);
+    });
+  }
 });
 
 app.get('/room', function(req, res){
-  dbclient.sendMessages(req['query']['r'], res);
+  if(req['query']['r']){
+    dbclient.sendMessages(req['query']['r'], res);
+  }
+  else{
+    res.redirect('/threshold?err=2');
+  }
 });
 
-io.sockets.on('connection', function(socket){
-  socket.on('createRoom', function(data){
-    dbclient.createRoom(data.user, data.room, socket);
-  });
-
-  socket.on('destroyRoom', function(data){
-    dbclient.destroyRoom(data.room, socket); 
-  });
-
-  socket.on('subscribe', function(data){
-    dbclient.subscribeRoom(data.user, data.room, socket, 1);
-  });
-
-  socket.on('unsubscribe', function(data){
-    // check if # actually exists if not emit something 
-  });
+app.get('/delete', function(req, res){
+  if(!req.session.auth){
+    res.redirect('/threshold?err=3');;
+  }
+  else{
+    dbclient.destroyRoom(req['query']['r'], function(){
+      res.redirect('/threshold');               
+    });
+  }
 });
 
 /* TODO need to create a way of namespacing sockets so not emitting every message

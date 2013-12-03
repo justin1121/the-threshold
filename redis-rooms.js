@@ -14,7 +14,7 @@ var connectDb = function(dbport , dbhost){
   console.log("Connected to Redis at", dbhost + ":", dbport);
 };
 
-var createRoom = function(user, room, socket){
+var createRoom = function(user, room, cb){
   rclient.lindex(room, 0, function(err, reply){
     if(!reply){
       rclient.lpush(room, user, function(err){
@@ -22,21 +22,25 @@ var createRoom = function(user, room, socket){
           console.log(err);
         }
       });
-      subscribeRoom(user, room, socket, 0); 
+      subscribeRoom(user, room); 
       rclient.lpush('rooms', room, function(err){
         if(err){
           console.log(err);
         }
       });
-      socket.emit("roomCreated");
+      if(cb){
+        cb(1);
+      }
     }
     else{
-      socket.emit('roomExists');
+      if(cb){
+        cb(0);
+      }
     }
   });
 };
 
-var destroyRoom = function(room, socket){
+var destroyRoom = function(room, cb){
   rclient.del(room, function(err){
     if(err){
       console.log(err);
@@ -45,6 +49,7 @@ var destroyRoom = function(room, socket){
 
   rclient.del('sms-' + room, function(err){
     if(err){
+      console.log(err);
     }
   });
   
@@ -54,19 +59,22 @@ var destroyRoom = function(room, socket){
     }
   });
 
-  socket.emit('roomDestroyed', {room: room});
+  if(cb){
+    cb();
+  }
 };
 
-var subscribeRoom = function(user, room, socket, emit){
+var subscribeRoom = function(user, room, cb){
   if(user != ''){
     rclient.set(user, room, function(err){
-      if(emit){
-        socket.emit('roomSubscribed');
+      if(cb){
+        cb();
       }
     });
   }
 };
 
+// TODO last action that needs to be fully implemented
 var unsubscribeRoom = function(user, room, socket){
   if(room){
     subscribeRoom(user, room, socket);
@@ -120,18 +128,18 @@ var forwardMessage = function(user, mess, res, io){
   });
 };
 
-var sendAllRooms = function(res, auth){  
+var getAllRooms = function(cb){  
   rclient.llen('rooms', function(err, reply){
-    var json = {};
-    json.rooms = null;
-    json.auth = auth;
-    if(reply == 0){
-      res.render('threshold.ejs', json);
+    if(!reply){
+      if(cb){
+        cb(null);
+      }
     }
     else{
       rclient.lrange('rooms', 0, reply - 1, function(err, reply){
-        json.rooms = reply;
-        res.render('threshold.ejs', json);
+        if(cb){
+          cb(reply);
+        }
       });
     }
   });
@@ -158,4 +166,4 @@ exports.createRoom = createRoom;
 exports.connectDb = connectDb;
 exports.flushDb = flushDb;
 exports.forwardMessage = forwardMessage;
-exports.sendAllRooms = sendAllRooms;
+exports.getAllRooms = getAllRooms;

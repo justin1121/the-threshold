@@ -51,10 +51,3 @@ comes with SMS apis, so maybe can use this to receive text messages from
 certain numbers and parse out the meta data to route messages. Hopefully
 these SMS apis will be backported.
 
-Socket.IO - TODO
-
-I think I have over used socket.io so far and would like to change a lot of the
-threshold page to just rely on http requests. It was nice to use it a bit
-and figure out some interesting ways to do things, but I have reinvented things
-where http requests can get the job done. Socket.IO can stick around for pushing
-messages to the rooms page though...
