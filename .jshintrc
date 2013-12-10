@@ -63,5 +63,5 @@
       "afterEach",
       "expect"
     ],
-    "maxlen": 100 
+    "maxlen": 85
 }
