@@ -1,53 +1,56 @@
-Redis Infrastrucutre:
+THE THRESHOLD OVERVIEW
+======================
 
-Need to create a background API for dealing with the different functions
-concerning the below infrastructure. The API will then be able to be
-accessed easily from a few different ways. Including: web interface, text
-interface.
+The Threshold receives messages and then forwards them to the room the messages belong in. The Threshold receives messages from the Twilio servers as a HTTP request. It forwards messages depending on who the messages come from and if the number is subscribed to a room. If the number is not subscribed to a room then the message is discarded. Every time a message is received a message is sent to the Twilio servers to be forwarded back to the numbers the message was received from. This is to confirm the message was received and processed.
 
-rooms: rooms -> rooms
+DATABASES
+---------
 
-subscribers: (room) -> users 
+The Threshold is run using two separate databases. The main database is the database the stores all of the main data. This includes the rooms, subscribers to the rooms and messages sent to each room. By default this is a Redis database. The connection between the main application and the databases connection will be standardised. This will allow any database to be dropped in a used as the main database. Postgres will be implemented as another option. TODO: For other databases an implementation can be supplied by the file name.
+
+The other database that The Threshold relies on is an authentication database. This uses a Postgres database. See AUTHENTICATION below. 
+
+A future feature idea is to use the main database as a funnel for all messages. When using Redis it would use Redis' pub-sub feature. Need to look into the same sort of thing in Postgres. For other custom databases this feature can be turned on and off depending on if the database/implementation support some sort of pub-sub functionality. Using message funneling will provide two main advantages over the complexity it will cause. First, it will allow messages to come from any source. This will make it easy to extend to other data sources. Right now messages can only be received from Twilio's servers. The other advantage will allow for clustering of The Threshold servers. This will allow load balancing by having slave servers only subscribed to certain rooms. This needs to be thought about some more once I decide to implement this.
+
+REDIS DATA ARCH
+---------------
+
+Name           Structure 
+
+rooms:         rooms -> rooms
+
+subscribers:   (room) -> users 
 
 subscriptions: (phone #) - (room)
 
-messages: sms-(room) -> messages
+messages:      sms-(room) -> messages
 
-Anything surronded in '()' are variables to be filled in with user
-specified info. '-' characters mean its a key to value pair. '->' 
-characters mean key to list value.
+NOTE: Anything above surrounded in '()' are variables to be filled in with user specified info, '-' represents a key to value pair, '->' represents a key to list.
 
-Note about admin :
-(ANOTHER SIDE NOTE - > this isn't going to work until auth becomes a thing so only I can?)
+POSTGRES DATA ARCH
+------------------
+TODO
 
-Admin is the person who creates the room, is the only person who can destroy
-the room. An admin can abdicate their admin status and then the next user.
-in the list becomes the admin. Need some sort of message to inform.
+AUTHENTICATION
+--------------
+TODO
 
-Redis side note:
 
-Investigate just putting messages into redis and have a pub-sub
-system where it forwards the message out to clients when it gets added.
-Might scale better? Could have messages coming in from other services 
-other then just the current twilio GET request. Might cause delay, but
-probably not, just seems a little weird to have two data sources feeding
-the app.
+AUTH POSTGRES DATA ARCH
+-----------------------
+TODO
 
-Redis vs. Postgres:
 
-Might make a neat drop in replacement for redis and use postgres and maybe
-eventually do some A/B testing and see which ones scales better. Problem
-with this is getting enough traffic where these things could be stressed
-in some way or another.
+ADMIN
+-----
+TODO
 
-Subscribing to more than on room?
 
-Not sure how going to handle this...maybe doesn't make sense seeing as
-user receiving the message to their phone would have to parse out the
-differences in the single stream. I think maybe this is where text message
-meta data being parsed out by an android app would come in handy. Side note:
-a twitter bootstrap like thing just came out for android. Anyway kitkat 4.4
-comes with SMS apis, so maybe can use this to receive text messages from
-certain numbers and parse out the meta data to route messages. Hopefully
-these SMS apis will be backported.
+FUTURE
+------
 
+* Add user persistence 
+* Turn off message confirmation in user setting.
+* Subscribing to multiple rooms 
+* Scaling with multiple Twilio numbers
+* Redis pub-sub system, see above Redis docs. Is this doable in Postgres if need be?
