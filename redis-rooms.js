@@ -1,3 +1,6 @@
+/* jshint node: true */
+'use strict';
+
 var redis = require('redis'),
     twilio = require('twilio');
 
@@ -22,7 +25,7 @@ var createRoom = function(user, room, cb){
           console.log(err);
         }
       });
-      subscribeRoom(user, room); 
+      subscribeRoom(user, room);
       rclient.lpush('rooms', room, function(err){
         if(err){
           console.log(err);
@@ -65,8 +68,12 @@ var destroyRoom = function(room, cb){
 };
 
 var subscribeRoom = function(user, room, cb){
-  if(user != ''){
+  if(user !== ''){
     rclient.set(user, room, function(err){
+      if(err){
+        throw err;
+      }
+
       if(cb){
         cb();
       }
@@ -88,18 +95,18 @@ var unsubscribeRoom = function(user, room, socket){
   socket.emit('roomUnsubscribed');
 };
 
-var sendMessages = function(room, res){ 
+var getMessages = function(room, cb){
   rclient.llen('sms-' + room, function(err, reply){
-    var json = {};
-    json.room = room;
-    json.messTime = null;
-    if(reply == 0){
-      res.render('room.ejs', json);
+    if(!reply){
+      if(cb){
+        cb(reply);
+      }
     }
     else{
       rclient.lrange('sms-' + room, 0, reply - 1, function(err, reply){
-        json.messTime = reply;
-        res.render('room.ejs', json);
+        if(cb){
+          cb(reply);
+        }
       });
     }
   });
@@ -107,13 +114,13 @@ var sendMessages = function(room, res){
 
 var forwardMessage = function(user, mess, res, io){
   rclient.get(user, function(err, reply){
-    var tres = new twilio.TwimlResponse(); 
+    var tres = new twilio.TwimlResponse();
     if(!reply){
       tres.message("You are not subscribed to a room.");
       res.send(tres.toString());
     }
     else{
-      var mtime = (new Date).getTime();
+      var mtime = (new Date()).getTime();
       var json = '{"message":"' + mess + '","time":"' + mtime + '"}';
 
       rclient.lpush('sms-' + reply, json, function(err){
@@ -123,13 +130,14 @@ var forwardMessage = function(user, mess, res, io){
       });
       tres.message("Message Forwarded to " + reply + "!");
       res.send(tres.toString());
+
       // TODO look into doing websockets
       io.sockets.emit('sms-' + reply, { message: mess, time: mtime });
     }
   });
 };
 
-var getAllRooms = function(cb){  
+var getAllRooms = function(cb){
   rclient.llen('rooms', function(err, reply){
     if(!reply){
       if(cb){
@@ -159,7 +167,7 @@ var flushDb = function(){
 };
 
 exports.clearSMSList = clearSMSList;
-exports.sendMessages = sendMessages;
+exports.getMessages = getMessages;
 exports.unsubscribeRoom = unsubscribeRoom;
 exports.subscribeRoom = subscribeRoom;
 exports.destroyRoom = destroyRoom;
