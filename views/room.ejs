@@ -9,7 +9,17 @@
 </head>
 <body>
   <div class="container">
-    <% include navbar %>
+    <div class="navbar navbar-default" role="navigation">
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="/threshold">Threshold</a>
+      </div>
+    </div>
     <div class="jumbotron">
       <h1>Room - <%= room %></h1>
       <p>Text 17786530430</p>
@@ -30,7 +40,7 @@
   <script src="/js/jquery.js"></script>
   <script src="/js/bootstrap.min.js"></script>
   <script>
-    var socket = io.connect('circumpunct.ca');
+    var socket = io.connect('<%= host %>');
 
     $(document).ready(function(){
       socket.on('sms-<%= room %>', function(data){

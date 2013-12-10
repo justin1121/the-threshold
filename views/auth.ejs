@@ -9,7 +9,17 @@
 </head>
 <body>
   <div class="container">
-    <% include navbar %>
+    <div class="navbar navbar-default" role="navigation">
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="/threshold">Threshold</a>
+      </div>
+    </div>
     <div class="jumbotron">
       <h1>Auth</h1>
       <form role="form" action="auth" method="post">
