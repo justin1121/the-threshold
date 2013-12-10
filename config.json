@@ -1,7 +1,7 @@
 {
-  "host": "circumpunct.ca",
+  "host": "",
   "dbhost": "127.0.0.1",
   "dbport": "6379",
-  "authConnString": "postgres://circumpunct@localhost/threshold",
+  "authConnString": "",
   "log": "0"
 }
