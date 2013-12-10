@@ -1,3 +1,6 @@
+/* jshint node: true */
+'use strict';
+
 var crypto = require('crypto'),
     pg = require('pg');
 
@@ -14,8 +17,8 @@ var createAuth = function(user, pass, connString){
         if(err){
           throw err;
         }
-        client.query('INSERT INTO auth (username, salt, key) VALUES ($1, $2, $3)', [user, buf, key], 
-        function(err, res){
+        var querystr = 'INSERT INTO auth (username, salt, key) VALUES ($1, $2, $3)';
+        client.query(querystr, [user, buf, key], function(err){
           if(err){
             throw err;
           }
@@ -31,18 +34,21 @@ var authenticate = function(user, pass, connString, cb){
     if(err){
       throw err;
     }
-    var query = client.query('SELECT salt, key FROM auth WHERE username=$1', [user]);
+    var querystr = 'SELECT salt, key FROM auth WHERE username=$1';
+    var query = client.query(querystr, [user]);
 
-    query.on('row', function(row, res){
+    query.on('row', function(row){
       crypto.pbkdf2(pass, row.salt, 3000, 16, function(err, key){
         if(err){
           throw err;
         }
         if(key.toString() === row.key.toString()){
           cb(1);
+          done();
         }
         else{
           cb(0);
+          done();
         }
       });
     });
@@ -54,14 +60,16 @@ var authenticate = function(user, pass, connString, cb){
     });
 
     query.on('end', function(res){
-      if(res.rowCount == 0){
+      if(!res.rowCount){
         cb(0);
+        done();
       }
     });
   });
 };
 
-var deleteAuth = function(user){
+/* TODO */
+var deleteAuth = function(){
 
 };
 
@@ -72,7 +80,7 @@ var iterationsTest = function(pass){
       throw err;
     }
 
-    crypto.pbkdf2(pass, buf, 3000, 16, function(err, key){
+    crypto.pbkdf2(pass, buf, 3000, 16, function(){
       console.timeEnd('itsTest');
     });
   });
