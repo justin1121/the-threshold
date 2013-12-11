@@ -54,3 +54,4 @@ FUTURE
 * Subscribing to multiple rooms 
 * Scaling with multiple Twilio numbers
 * Redis pub-sub system, see above Redis docs. Is this doable in Postgres if need be?
+* Testing
