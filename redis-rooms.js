@@ -7,8 +7,17 @@ var redis = require('redis'),
 
 var rclient;
 
-var connectDb = function(dbport , dbhost){
+var connectDb = function(dbport, dbhost, cb){
   rclient = redis.createClient(dbport, dbhost);
+  rclient.on('connect', function(err){
+    if(err){
+      throw err;
+    }
+
+    if(cb){
+      cb();
+    }
+  });
 
   rclient.on('error', function(err){
     throw err;

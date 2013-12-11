@@ -46,10 +46,7 @@ var readConfig = function(cb){
     authConnString = cdata['authConnString'];
 
     setLogging(cdata['log']);
-    connectDb();
-    if(cb){
-      cb();
-    }
+    dbclient.connectDb(dbport, dbhost, cb);
   });
 };
 
@@ -65,8 +62,7 @@ app.use(express.static(__dirname + '/public'));
 app.use(express.favicon(__dirname + '/public/images/favicon.ico'));
 app.use(express.bodyParser());
 app.use(express.cookieParser());
-app.use(express.cookieSession({secret: '19920606',
-                               cookie: {maxAge: 3600000}}));
+app.use(express.cookieSession({secret: '19920606', cookie: {maxAge: 3600000}}));
 
 app.get('/auth', function(req, res){
   var json = {};
@@ -207,11 +203,6 @@ app.get('/sms', function(req, res){
     dbclient.forwardMessage(from, req.query['Body'], res, io);
   }
 });
-
-
-var connectDb = function(){
-  dbclient.connectDb(dbport, dbhost);
-};
 
 var setLogging = function(level){
   if(level !== 0){
