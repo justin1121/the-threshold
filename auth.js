@@ -4,6 +4,7 @@
 var crypto = require('crypto'),
     pg = require('pg');
 
+// this is not used in the actual server yet
 var createAuth = function(user, pass, connString){
   pg.connect(connString, function(err, client, done){
     if(err){
@@ -73,6 +74,10 @@ var deleteAuth = function(){
 
 };
 
+// testing for the amount of iterations used,
+// on my machine it seems to reach about 8ms at 3000 iterations
+// with a more powerful computer, this should be increased to as
+// high as possible while still staying around 8ms
 var iterationsTest = function(pass){
   console.time('itsTest');
   crypto.randomBytes(16, function(err, buf){
