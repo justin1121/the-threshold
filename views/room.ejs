@@ -29,28 +29,29 @@
         <% messTime.forEach(function(json){ %>
           <li class="list-group-item">
             <% var obj = JSON.parse(json) %>
-            <%= obj.message %>
+            <%= obj.msg %>
             <span style="display:none;" class="badge"><%= obj.time %></span>
           </li>
         <% }); %>
       <% } %>
     </ul>
   </div>
-  <script src="socket.io/socket.io.js"></script>
   <script src="/js/jquery.js"></script>
   <script src="/js/bootstrap.min.js"></script>
   <script>
-    var socket = io.connect('<%= host %>');
-
     $(document).ready(function(){
-      socket.on('sms-<%= room %>', function(data){
-        var li = $('<li class="list-group-item">').text(data.message);
-        var span = $('<span class="badge">').text(getTimeString(data.time));
-        li.prepend(span);
-        $('#smslist').prepend(li);
-      });
-      
       convertTimes();
+
+      var ws = new WebSocket('ws://<%= host %>');
+      ws.onmessage = function(event){
+        var data = JSON.parse(event.data);
+        if(data.room === '<%= room %>'){
+          var li = $('<li class="list-group-item">').text(data.msg);
+          var span = $('<span class="badge">').text(getTimeString(data.time));
+          li.prepend(span);
+          $('#smslist').prepend(li);
+        }
+      };
     });
 
     // TODO test speeds with a lot of messages
