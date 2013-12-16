@@ -1,20 +1,29 @@
 /* jshint node: true */
 'use strict';
 
-var express = require('express'),
+var WebSocketServer = require('ws').Server,
+    http = require('http'),
+    express = require('express'),
     app = express(),
-    server = require('http').createServer(app),
-    io = require('socket.io').listen(server),
     fs = require('fs'),
+    twilio = require('twilio'),
     dbclient = require('./redis-rooms.js'),
     auth = require('./auth.js');
 
+app.use(express.static(__dirname + '/public'));
+app.use(express.favicon(__dirname + '/public/images/favicon.ico'));
+app.use(express.bodyParser());
+app.use(express.cookieParser());
+app.use(express.cookieSession({secret: '19920606', cookie: {maxAge: 3600000}}));
+
+var server = http.createServer(app);
 var port;
 var host = '';
 var dbhost = '';
 var dbport = '';
 var authConnString = null;
 var dbclient;
+var wss;
 
 var readConfig = function(cb){
   fs.readFile('./config.json', function(err, data){
@@ -50,19 +59,18 @@ var readConfig = function(cb){
   });
 };
 
-(function(){
-  readConfig(function(){
-    server.listen(port, function(){
-      console.log('Listening on ' + port);
-    });
-  });
-})();
+readConfig(function(){
+  server.listen(port, function(){
+    console.log('Listening on ' + port);
+    wss = new WebSocketServer({server: server});
 
-app.use(express.static(__dirname + '/public'));
-app.use(express.favicon(__dirname + '/public/images/favicon.ico'));
-app.use(express.bodyParser());
-app.use(express.cookieParser());
-app.use(express.cookieSession({secret: '19920606', cookie: {maxAge: 3600000}}));
+    wss.broadcast = function(data){
+      for(var i in this.clients){
+        this.clients[i].send(data);
+      }
+    };
+  });
+});
 
 app.get('/auth', function(req, res){
   var json = {};
@@ -178,9 +186,8 @@ app.get('/delete', function(req, res){
   }
 });
 
-/* TODO need to create a way of namespacing sockets 
- * so not emitting every message
- * TODO to every socket created, roooooooms*/
+/* TODO need to create a way of namespacing sockets so not emitting every message
+ * TODO to every client connected */
 app.get('/sms', function(req, res){
   if(req.query['clear'] == 1){
     if(!req.query['room']){
@@ -198,16 +205,13 @@ app.get('/sms', function(req, res){
     res.send(204);
   }
   else{
-    var from = req.query['From'];
-    from = from.substring(1, from.length);
-    dbclient.forwardMessage(from, req.query['Body'], res, io);
+    handleText(req, res);
   }
 });
 
+
 var setLogging = function(level){
-  if(level !== 0){
-    io.set('log level', 1);
-  }
+  // TODO does nothing should add some stuff for logging, not sure what though
 };
 
 var sendMessages = function(res, room){
@@ -218,4 +222,28 @@ var sendMessages = function(res, room){
     json.messTime = msgs;
     res.render('room.ejs', json);
   });
+};
+
+var handleText = function(req, res){
+  var from = req.query['From'], msg = req.query['Body'];
+  from = from.substring(1, from.length);
+
+  dbclient.checkSubscription(from, function(room){
+    var tres = new twilio.TwimlResponse();
+    if(!room){
+      tres.message("You are not subscribed to a room.");
+      res.send(tres.toString());
+    }
+    else{
+      tres.message("Message Forwarded to " + room + "!");
+      res.send(tres.toString());
+
+      var time = (new Date()).getTime();
+      var json = { room: room, msg: msg, time: time };
+      wss.broadcast(JSON.stringify(json));
+
+      dbclient.storeMessage(room, msg, time);
+    }
+  });
+
 };

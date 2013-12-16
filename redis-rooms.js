@@ -1,8 +1,7 @@
 /* jshint node: true */
 'use strict';
 
-var redis = require('redis'),
-    twilio = require('twilio');
+var redis = require('redis');
 
 
 var rclient;
@@ -121,27 +120,24 @@ var getMessages = function(room, cb){
   });
 };
 
-var forwardMessage = function(user, mess, res, io){
+var checkSubscription = function(user, cb){
   rclient.get(user, function(err, reply){
-    var tres = new twilio.TwimlResponse();
-    if(!reply){
-      tres.message("You are not subscribed to a room.");
-      res.send(tres.toString());
+    if(err){
+      throw err;
     }
-    else{
-      var mtime = (new Date()).getTime();
-      var json = '{"message":"' + mess + '","time":"' + mtime + '"}';
 
-      rclient.lpush('sms-' + reply, json, function(err){
-        if(err){
-          console.log(err);
-        }
-      });
-      tres.message("Message Forwarded to " + reply + "!");
-      res.send(tres.toString());
+    if(cb){
+      cb(reply);
+    }
+  });
+};
 
-      // TODO look into doing websockets
-      io.sockets.emit('sms-' + reply, { message: mess, time: mtime });
+var storeMessage = function(room, msg, time){
+  var json = { msg: msg, time: time };
+
+  rclient.lpush('sms-' + room, JSON.stringify(json), function(err){
+    if(err){
+      console.log(err);
     }
   });
 };
@@ -183,5 +179,6 @@ exports.destroyRoom = destroyRoom;
 exports.createRoom = createRoom;
 exports.connectDb = connectDb;
 exports.flushDb = flushDb;
-exports.forwardMessage = forwardMessage;
+exports.checkSubscription = checkSubscription;
+exports.storeMessage = storeMessage;
 exports.getAllRooms = getAllRooms;
