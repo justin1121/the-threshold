@@ -1,7 +1,0 @@
-{
-  "host": "",
-  "dbhost": "127.0.0.1",
-  "dbport": "6379",
-  "authConnString": "",
-  "log": "0"
-}
