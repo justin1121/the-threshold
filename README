@@ -3,10 +3,30 @@ THE THRESHOLD OVERVIEW
 
 The Threshold receives messages and then forwards them to the room the messages belong in. The Threshold receives messages from the Twilio servers as a HTTP request. It forwards messages depending on who the messages come from and if the number is subscribed to a room. If the number is not subscribed to a room then the message is discarded. Every time a message is received a message is sent to the Twilio servers to be forwarded back to the numbers the message was received from. This is to confirm the message was received and processed.
 
+CONFIG
+------
+
+The Threshold relies on a configuration file called config.json. This file contains all of the parameters that is needed for The Threshold to run. All parameters are required except for the ``` log ``` parameter. (Which actually doesn't do anything right now).
+
+Example:
+
+```
+{
+  "host: "example.com",
+  "port: "8080",
+  "dbhost": "localhost",
+  "dbport": "6379",
+  "authConnSTring": "postgres://example@localhost/threshold",
+  "log", "0"
+}
+```
+
+TODO: Autogen config file
+
 DATABASES
 ---------
 
-The Threshold is run using two separate databases. The main database is the database the stores all of the main data. This includes the rooms, subscribers to the rooms and messages sent to each room. By default this is a Redis database. The connection between the main application and the databases connection will be standardised. This will allow any database to be dropped in a used as the main database. Postgres will be implemented as another option. TODO: For other databases an implementation can be supplied by the file name.
+The Threshold is run using two separate databases. The main database is the database the stores all of the main data. This includes the rooms, subscribers to the rooms and messages sent to each room. By default this is a Redis database. The connection between the main application and the databases connection will be standardised. This will allow any database to be dropped in a used as the main database. Postgres will be implemented as another option. TODO: For other databases an implementation can be supplied by the file name?????
 
 The other database that The Threshold relies on is an authentication database. This uses a Postgres database. See AUTHENTICATION below. 
 
@@ -34,7 +54,6 @@ TODO
 AUTHENTICATION
 --------------
 TODO
-
 
 AUTH POSTGRES DATA ARCH
 -----------------------
