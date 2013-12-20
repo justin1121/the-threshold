@@ -1,7 +1,7 @@
 THE THRESHOLD OVERVIEW
 ======================
 
-The Threshold receives messages and then forwards them to the room the messages belong in. The Threshold receives messages from the Twilio servers as a HTTP request. It forwards messages depending on who the messages come from and if the number is subscribed to a room. If the number is not subscribed to a room then the message is discarded. Every time a message is received a message is sent to the Twilio servers to be forwarded back to the numbers the message was received from. This is to confirm the message was received and processed.
+The Threshold receives SMS messages and then forwards them to the room the messages belong in. The Threshold receives messages from the Twilio servers as a HTTP request. It forwards messages depending on the number the messages came from and if the number is subscribed to a room. If the number is not subscribed to a room then the message is discarded. Every time a message is received a message is sent to the Twilio servers to be forwarded back to the number the message was received from. This is to confirm the message was received and processed. In the future it will also forward messages to everyone else who is subscribed to the room a message is received from.
 
 CONFIG
 ------
@@ -12,6 +12,7 @@ Example:
 
 ```
 {
+  "twiPhone": "+111155566666",
   "host: "example.com",
   "port: "8080",
   "dbhost": "localhost",
@@ -26,7 +27,7 @@ TODO: Autogen config file
 DATABASES
 ---------
 
-The Threshold is run using two separate databases. The main database is the database the stores all of the main data. This includes the rooms, subscribers to the rooms and messages sent to each room. By default this is a Redis database. The connection between the main application and the databases connection will be standardised. This will allow any database to be dropped in a used as the main database. Postgres will be implemented as another option. TODO: For other databases an implementation can be supplied by the file name?????
+The Threshold uses two separate databases. The main database is the database the stores all of the main data. This includes the rooms, subscribers to the rooms and messages sent to each room. By default this is a Redis database. The connection between the main application and the databases connection will be standardised. This will allow any database to be dropped in a used as the main database. Postgres will be implemented as another option. TODO: For other databases an implementation can be supplied by the file name?????
 
 The other database that The Threshold relies on is an authentication database. This uses a Postgres database. See AUTHENTICATION below. 
 
@@ -47,30 +48,37 @@ messages:      sms-(room) -> messages
 
 NOTE: Anything above surrounded in '()' are variables to be filled in with user specified info, '-' represents a key to value pair, '->' represents a key to list.
 
-POSTGRES DATA ARCH
-------------------
-TODO
+POSTGRES DATA ARCH - TODO
+-------------------------
 
-AUTHENTICATION
---------------
-TODO
+AUTHENTICATION - TODO
+---------------------
 
-AUTH POSTGRES DATA ARCH
------------------------
-TODO
+AUTH POSTGRES DATA ARCH - TODO
+------------------------------
 
+ADMIN - TODO
+------------
 
-ADMIN
------
-TODO
-
+CLIENT SIDE/TEMPLATES - TODO
+----------------------------
 
 FUTURE
 ------
 
+* Forward messages to subscribers of a room
 * Add user persistence 
 * Turn off message confirmation in user setting.
+* Telephone number validation
+* Redis pub-sub system, see above Redis docs. Is this doable in Postgres if need be?
 * Subscribing to multiple rooms 
 * Scaling with multiple Twilio numbers
-* Redis pub-sub system, see above Redis docs. Is this doable in Postgres if need be?
 * Testing
+
+AUTOMATION - GRUNT - TODO
+-------------------------
+
+* uglify
+* deploy
+* testing
+* generate config file
