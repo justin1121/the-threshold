@@ -50,9 +50,10 @@
     "onecase"       : true,
     "plusplus"      : false,
     "proto"         : false,
-    "sub"           : true,
+    "sub"           : false,
     "trailing"      : true,
     "white"         : false,
+    "quotmark"     : "single",
 
     "predef": [
       "describe",
