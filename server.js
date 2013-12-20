@@ -17,12 +17,12 @@ app.use(express.cookieParser());
 app.use(express.cookieSession({secret: '19920606', cookie: {maxAge: 3600000}}));
 
 var server = http.createServer(app);
-var port;
+var twiNumber = '';
 var host = '';
+var port = 0;
 var dbhost = '';
 var dbport = '';
-var authConnString = null;
-var dbclient;
+var authConnString = '';
 var wss;
 
 var readConfig = function(cb){
@@ -32,29 +32,33 @@ var readConfig = function(cb){
     }
 
     var cdata = JSON.parse(data);
-    if(!cdata['host']){
+    if(!cdata.twiNumber){
+      throw new Error('Config paramerter (twiNumber) is required.');
+    }
+    if(!cdata.host){
       throw new Error('Config parameter (host) is required.');
     }
-    if(!cdata['port']){
+    if(!cdata.port){
       throw new Error('Config parameter (port) is required.');
     }
-    if(!cdata['dbhost']){
+    if(!cdata.dbhost){
       throw new Error('Config parameter (dbhost) is required.');
     }
-    if(!cdata['dbport']){
+    if(!cdata.dbport){
       throw new Error('Config parameter (dbport) is required.');
     }
-    if(!cdata['authConnString']){
+    if(!cdata.authConnString){
       throw new Error('Config parameter (authConnString) is required.');
     }
 
-    host = cdata['host'];
-    port = cdata['port'];
-    dbhost = cdata['dbhost'];
-    dbport = cdata['dbport'];
-    authConnString = cdata['authConnString'];
+    twiNumber = cdata.twiNumber;
+    host = cdata.host;
+    port = cdata.port;
+    dbhost = cdata.dbhost;
+    dbport = cdata.dbport;
+    authConnString = cdata.authConnString;
 
-    setLogging(cdata['log']);
+    setLogging(cdata.log);
     dbclient.connectDb(dbport, dbhost, cb);
   });
 };
@@ -91,7 +95,7 @@ app.get('/auth', function(req, res){
 });
 
 app.post('/auth', function(req, res){
-  var user = req['body']['inputUser'], pass = req['body']['inputPass'];
+  var user = req.body.inputUser, pass = req.body.inputPass;
   auth.authenticate(user, pass, authConnString, function(auth){
     if(auth){
       req.session.auth = 1;
@@ -118,6 +122,7 @@ app.get('/admin', function(req, res){
       json.rooms = reply;
       json.auth = 1;
       json.err = 0;
+      json.twiNumber = twiNumber;
       json.host = host;
       res.render('threshold.ejs', json);
     });
@@ -126,14 +131,14 @@ app.get('/admin', function(req, res){
 
 app.get('/threshold', function(req, res){
   var json = {};
-  switch(req.query['err']){
+  switch(req.query.err){
     case 1:
       json.err = 1;
-      json.errmsg = "Room exists!";
+      json.errmsg = 'Room exists!';
       break;
     case 2:
       json.err = 1;
-      json.errmsg = "Room does not exists!";
+      json.errmsg = 'Room does not exists!';
       break;
     default:
       json.err = 0;
@@ -142,6 +147,7 @@ app.get('/threshold', function(req, res){
   dbclient.getAllRooms(function(reply){
     json.rooms = reply;
     json.auth = 0;
+    json.twiNumber = twiNumber;
     json.host = host;
     res.render('threshold.ejs', json);
   });
@@ -149,26 +155,26 @@ app.get('/threshold', function(req, res){
 
 app.post('/room', function(req, res){
   var body = req.body;
-  if(body['nameInput'] && body['numberInput']){
-    dbclient.createRoom(body['numberInput'], body['nameInput'], function(state){
+  if(body.nameInput && body.numberInput){
+    dbclient.createRoom(body.numberInput, body.nameInput, function(state){
       if(state){
-        res.redirect('/room?r=' + body['nameInput']);
+        res.redirect('/room?r=' + body.nameInput);
       }
       else{
         res.redirect('/threshold?err=1');
       }
     });
   }
-  else if(body['snameInput'] && body['snumberInput']){
-    dbclient.subscribeRoom(body['snumberInput'], body['snameInput'], function(){
-      res.redirect('/room?r=' + body['snameInput']);
+  else if(body.snameInput && body.snumberInput){
+    dbclient.subscribeRoom(body.snumberInput, body.snameInput, function(){
+      res.redirect('/room?r=' + body.snameInput);
     });
   }
 });
 
 app.get('/room', function(req, res){
-  if(req.query['r']){
-    sendMessages(res, req.query['r']);
+  if(req.query.r){
+    sendMessages(res, req.query.r);
   }
   else{
     res.redirect('/threshold?err=2');
@@ -180,7 +186,7 @@ app.get('/delete', function(req, res){
     res.redirect('/threshold?err=3');
   }
   else{
-    dbclient.destroyRoom(req.query['r'], function(){
+    dbclient.destroyRoom(req.query.r, function(){
       res.redirect('/admin');
     });
   }
@@ -189,17 +195,17 @@ app.get('/delete', function(req, res){
 /* TODO need to create a way of namespacing sockets so not emitting every message
  * TODO to every client connected */
 app.get('/sms', function(req, res){
-  if(req.query['clear'] == 1){
-    if(!req.query['room']){
+  if(req.query.clear == 1){
+    if(!req.query.room){
       res.send(400);
     }
     else{
       console.log('Deleting SMS list.');
-      dbclient.clearSMSList(req.query['room']);
+      dbclient.clearSMSList(req.query.room);
       res.send(204);
     }
   }
-  else if(req.query['clear'] == 2){
+  else if(req.query.clear == 2){
     console.log('Flushing Database');
     dbclient.flushDb();
     res.send(204);
@@ -210,13 +216,14 @@ app.get('/sms', function(req, res){
 });
 
 
-var setLogging = function(level){
+var setLogging = function(){
   // TODO does nothing should add some stuff for logging, not sure what though
 };
 
 var sendMessages = function(res, room){
   dbclient.getMessages(room, function(msgs){
     var json = {};
+    json.twiNumber = twiNumber;
     json.host = host;
     json.room = room;
     json.messTime = msgs;
@@ -225,17 +232,17 @@ var sendMessages = function(res, room){
 };
 
 var handleText = function(req, res){
-  var from = req.query['From'], msg = req.query['Body'];
+  var from = req.query.From, msg = req.query.Body;
   from = from.substring(1, from.length);
 
   dbclient.checkSubscription(from, function(room){
     var tres = new twilio.TwimlResponse();
     if(!room){
-      tres.message("You are not subscribed to a room.");
+      tres.message('You are not subscribed to a room.');
       res.send(tres.toString());
     }
     else{
-      tres.message("Message Forwarded to " + room + "!");
+      tres.message('Message Forwarded to ' + room + '!');
       res.send(tres.toString());
 
       var time = (new Date()).getTime();

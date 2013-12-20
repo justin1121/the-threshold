@@ -21,10 +21,8 @@
       </div>
     </div>
     <div class="jumbotron">
-
       <h1>Threshold</h1>
-      <!-- TODO configurable --> 
-      <p>Text 17786530430</p>
+      <p>Text - <%= twiNumber %></p>
     </div>
     <div class="panel panel-default">
       <div class="panel-heading">
@@ -54,6 +52,7 @@
           <% var even = false %>
         <% } %>
         <% for(i = 0; i < rows; i++){ %>
+          <!-- switch this to list for easier rebalancing -->
           <tr>
             <td id='<%= rooms[i + i]%>wid'>
               <div class="panel panel-default">
