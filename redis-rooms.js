@@ -12,6 +12,7 @@ var connectDb = function(dbport, dbhost, cb){
     if(err){
       throw err;
     }
+    console.log('Connected to Redis at', dbhost + ':', dbport);
 
     if(cb){
       cb();
@@ -22,7 +23,6 @@ var connectDb = function(dbport, dbhost, cb){
     throw err;
   });
 
-  console.log('Connected to Redis at', dbhost + ':', dbport);
 };
 
 var createRoom = function(user, room, cb){
