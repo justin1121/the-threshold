@@ -10,6 +10,7 @@
     "ejs": "0.8.5",
     "pg": "~2.9.0",
     "ws": "~0.4.31",
+    "async": "~0.2.9",
     "grunt": "~0.4.2",
     "grunt-contrib-uglify": "~0.2.7"
   },
@@ -18,6 +19,6 @@
     "npm": "1.3.x"
   },
   "devDependencies": {
-    "grunt-contrib-jshint": "~0.7.2"
+    "grunt-contrib-jshint": "~0.8.0"
   }
 }
