@@ -63,13 +63,26 @@ ADMIN - TODO
 CLIENT SIDE/TEMPLATES - TODO
 ----------------------------
 
+Websockets vs. SSE
+------------------
+
+Websockets provide duplex communication between the server and the client. Websockets use a special protocol for communicating. Server-Sent Events provide one-way communication from the server to client. Server-Sent Events use the existing HTTP protocol to communicate. Passing messages to the client via Websockets is not necessary because the client does not need to communicate back to the server right now. Two things will determine which one I will use:
+
+1. The chance I will need duplex communication.
+2. The difficulty of separating messaging channels between each room.
+
+Will begin by experimenting with separating out messaging channels by room with Server-Sent Events.
+
+TWILIO TELEPHONE LOAD BALANCING
+-------------------------------
+
 FUTURE
 ------
 
 * Forward messages to subscribers of a room
 * Add user persistence 
 * Turn off message confirmation in user setting.
-* Telephone number validation
+* Telephone number validation, see http://libphonenumber.googlecode.com/svn/trunk/javascript/README
 * Redis pub-sub system, see above Redis docs. Is this doable in Postgres if need be?
 * Subscribing to multiple rooms 
 * Scaling with multiple Twilio numbers
