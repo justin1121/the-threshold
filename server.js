@@ -2,13 +2,14 @@
 'use strict';
 
 var WebSocketServer = require('ws').Server,
-    http = require('http'),
-    express = require('express'),
-    app = express(),
-    fs = require('fs'),
-    twilio = require('twilio'),
-    dbclient = require('./redis-rooms.js'),
-    auth = require('./auth.js');
+    http            = require('http'),
+    express         = require('express'),
+    app             = express(),
+    twilio          = require('twilio'),
+    async           = require('async'),
+    conf            = require('./config.js'),
+    dbclient        = require('./redis-rooms.js'),
+    auth            = require('./auth.js');
 
 app.use(express.static(__dirname + '/public'));
 app.use(express.favicon(__dirname + '/public/images/favicon.ico'));
@@ -16,70 +17,55 @@ app.use(express.bodyParser());
 app.use(express.cookieParser());
 app.use(express.cookieSession({secret: '19920606', cookie: {maxAge: 3600000}}));
 
-var server = http.createServer(app);
-var twiNumber = '';
-var host = '';
-var port = 0;
-var dbhost = '';
-var dbport = '';
-var authConnString = '';
-var wss;
+var server         = http.createServer(app);
+var config         = {};
+var wss            = null;
+var twiClient      = null;
+var twiListNumbers = [];
 
-var readConfig = function(cb){
-  fs.readFile('./config.json', function(err, data){
-    if(err){
-      throw err;
-    }
+conf.readConfig(function(cdata){
+  config = cdata;
+  setLogging(config.log);
+  twiClient = twilio(config.twiAccountSid, config.twiAuthSid);
 
-    var cdata = JSON.parse(data);
-    if(!cdata.twiNumber){
-      throw new Error('Config paramerter (twiNumber) is required.');
-    }
-    if(!cdata.host){
-      throw new Error('Config parameter (host) is required.');
-    }
-    if(!cdata.port){
-      throw new Error('Config parameter (port) is required.');
-    }
-    if(!cdata.dbhost){
-      throw new Error('Config parameter (dbhost) is required.');
-    }
-    if(!cdata.dbport){
-      throw new Error('Config parameter (dbport) is required.');
-    }
-    if(!cdata.authConnString){
-      throw new Error('Config parameter (authConnString) is required.');
-    }
+  async.series([
+    function(callback){
+      dbclient.connectDb(config.dbport, config.dbhost, function(){
+        callback(null, null);
+      });
+    },
+    function(callback){
+      twiClient.incomingPhoneNumbers.list(function(err, data){
+        if(err){
+          callback(err, null);
+        }
+        for(var number in data.incomingPhoneNumbers){
+          twiListNumbers.push(number.phone_number);
+        }
+        callback(null, null);
+      });
+    },
+    function(callback){
+      server.listen(config.port, function(){
+        console.log('Listening on ' + config.port);
+        wss = new WebSocketServer({server: server});
 
-    twiNumber = cdata.twiNumber;
-    host = cdata.host;
-    port = cdata.port;
-    dbhost = cdata.dbhost;
-    dbport = cdata.dbport;
-    authConnString = cdata.authConnString;
+        wss.broadcast = function(data){
+          for(var i in this.clients){
+            this.clients[i].send(data);
+          }
+        };
 
-    setLogging(cdata.log);
-    dbclient.connectDb(dbport, dbhost, cb);
-  });
-};
-
-readConfig(function(){
-  server.listen(port, function(){
-    console.log('Listening on ' + port);
-    wss = new WebSocketServer({server: server});
-
-    wss.broadcast = function(data){
-      for(var i in this.clients){
-        this.clients[i].send(data);
-      }
-    };
-  });
+        callback(null, null);
+      });
+    }
+  ]);
 });
 
 app.get('/auth', function(req, res){
   var json = {};
   json.err = 0;
-  json.host = host;
+  json.host = config.host;
 
   if(req.session.auth){
     res.redirect('/admin');
@@ -96,7 +82,7 @@ app.get('/auth', function(req, res){
 
 app.post('/auth', function(req, res){
   var user = req.body.inputUser, pass = req.body.inputPass;
-  auth.authenticate(user, pass, authConnString, function(auth){
+  auth.authenticate(user, pass, config.authConnString, function(auth){
     if(auth){
       req.session.auth = 1;
       res.redirect('/' + req.session.source);
@@ -104,7 +90,7 @@ app.post('/auth', function(req, res){
     else{
       var json = {};
       json.err = 1;
-      json.host = host;
+      json.host = config.host;
       res.render('auth.ejs', json);
     }
   });
@@ -122,14 +108,15 @@ app.get('/admin', function(req, res){
       json.rooms = reply;
       json.auth = 1;
       json.err = 0;
-      json.twiNumber = twiNumber;
-      json.host = host;
+      json.twiNumber = config.twiNumber;
+      json.host = config.host;
       res.render('threshold.ejs', json);
     });
   }
 });
 
 app.get('/threshold', function(req, res){
+  console.log(app.routes);
   var json = {};
   switch(req.query.err){
     case 1:
@@ -147,8 +134,8 @@ app.get('/threshold', function(req, res){
   dbclient.getAllRooms(function(reply){
     json.rooms = reply;
     json.auth = 0;
-    json.twiNumber = twiNumber;
-    json.host = host;
+    json.twiNumber = config.twiNumber;
+    json.host = config.host;
     res.render('threshold.ejs', json);
   });
 });
@@ -223,8 +210,8 @@ var setLogging = function(){
 var sendMessages = function(res, room){
   dbclient.getMessages(room, function(msgs){
     var json = {};
-    json.twiNumber = twiNumber;
-    json.host = host;
+    json.twiNumber = config.twiNumber;
+    json.host = config.host;
     json.room = room;
     json.messTime = msgs;
     res.render('room.ejs', json);
@@ -252,5 +239,4 @@ var handleText = function(req, res){
       dbclient.storeMessage(room, msg, time);
     }
   });
-
 };
