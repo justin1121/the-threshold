@@ -14,6 +14,27 @@ var connectDb = function(dbport, dbhost, cb){
     }
     console.log('Connected to Redis at', dbhost + ':', dbport);
 
+    var msgSubClient = redis.createClient(dbport, dbhost);
+
+    msgSubClient.on('connect', function(err){
+      if(err){
+        throw err;
+      }
+
+      msgSubClient.subscribe('txtMessages');
+
+      msgSubClient.on('message', function(chl, msg){
+        if(chl === 'txtMessages'){
+          var json = JSON.parse(msg);
+          storeMessage(json.room, json.msg, json.time);
+        }
+      });
+
+      msgSubClient.on('error', function(err){
+        throw err;
+      });
+    });
+
     if(cb){
       cb();
     }

@@ -1,10 +1,10 @@
 /* jshint node: true */
 'use strict';
 
-var WebSocketServer = require('ws').Server,
-    http            = require('http'),
+var http            = require('http'),
     express         = require('express'),
     app             = express(),
+    redis           = require('redis'),
     twilio          = require('twilio'),
     async           = require('async'),
     conf            = require('./config.js'),
@@ -18,8 +18,8 @@ app.use(express.cookieParser());
 app.use(express.cookieSession({secret: '19920606', cookie: {maxAge: 3600000}}));
 
 var server         = http.createServer(app);
+var msgPubClient   = null;
 var config         = {};
-var wss            = null;
 var twiClient      = null;
 var twiListNumbers = [];
 
@@ -46,17 +46,21 @@ conf.readConfig(function(cdata){
       });
     },
     function(callback){
-      server.listen(config.port, function(){
-        console.log('Listening on ' + config.port);
-        wss = new WebSocketServer({server: server});
+      msgPubClient = redis.createClient(config.dbport, config.dbhost);
 
-        wss.broadcast = function(data){
-          for(var i in this.clients){
-            this.clients[i].send(data);
-          }
-        };
+      msgPubClient.on('connect', function(err){
+        if(err){
+          throw err;
+        }
 
-        callback(null, null);
+        server.listen(config.port, function(){
+          console.log('Listening on ' + config.port);
+          callback(null, null);
+        });
+      });
+
+      msgPubClient.on('error', function(err){
+        throw err;
       });
     }
   ]);
@@ -116,7 +120,6 @@ app.get('/admin', function(req, res){
 });
 
 app.get('/threshold', function(req, res){
-  console.log(app.routes);
   var json = {};
   switch(req.query.err){
     case 1:
@@ -143,6 +146,7 @@ app.get('/threshold', function(req, res){
 app.post('/room', function(req, res){
   var body = req.body;
   if(body.nameInput && body.numberInput){
+    createSSERoomRoute(body.nameInput);
     dbclient.createRoom(body.numberInput, body.nameInput, function(state){
       if(state){
         res.redirect('/room?r=' + body.nameInput);
@@ -233,10 +237,48 @@ var handleText = function(req, res){
       res.send(tres.toString());
 
       var time = (new Date()).getTime();
-      var json = { room: room, msg: msg, time: time };
-      wss.broadcast(JSON.stringify(json));
+      var json = { msg: msg, time: time, user: from, room: room, };
 
-      dbclient.storeMessage(room, msg, time);
+      msgPubClient.publish('txtMessages', JSON.stringify(json));
     }
   });
+};
+
+var sendSSE = function(res, msg){
+  res.write('data: ' + msg + '\n\n');
+};
+
+var createSSERoomRoute = function(room){
+  app.get('/room/' + room, function(req, res){
+    req.socket.setTimeout(Infinity);
+
+    var msgSubClient = redis.createClient(config.dbport, config.dbhost);
+    
+    msgSubClient.on('connect', function(err){
+      if(err){
+        throw err;
+      }
+
+      res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive'
+      });
+      res.write('\n');
+
+      msgSubClient.on('error', function(err){
+        throw err;
+      });
+
+      msgSubClient.on('message', function(chl, msg){
+        if(chl === 'txtMessages' && msg.room === room){
+          sendSSE(res, JSON.stringify(msg));
+        }
+      });
+    });
+  });
+};
+
+var destroySSERoomRoute = function(room){
+  // find route in app.route and remove it 
 };
