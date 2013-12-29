@@ -25,6 +25,7 @@ var twiListNumbers = [];
 conf.readConfig(function(cdata){
   config = cdata;
   setLogging(config.log);
+  addRoutes();
   twiClient = twilio(config.twiAccountSid, config.twiAuthSid);
 
   async.series([
@@ -53,146 +54,6 @@ conf.readConfig(function(cdata){
   ]);
 });
 
-app.get('/auth', function(req, res){
-  var json = {};
-  json.err = 0;
-  json.host = config.host;
-
-  if(req.session.auth){
-    res.redirect('/admin');
-  }
-  else if(req.query.source){
-    req.session.source = req.query.source;
-    res.render('auth.ejs', json);
-  }
-  else{
-    req.session.source = 'admin';
-    res.render('auth.ejs', json);
-  }
-});
-
-app.post('/auth', function(req, res){
-  var user = req.body.inputUser, pass = req.body.inputPass;
-  auth.authenticate(user, pass, config.authConnString, function(auth){
-    if(auth){
-      req.session.auth = 1;
-      res.redirect('/' + req.session.source);
-    }
-    else{
-      var json = {};
-      json.err = 1;
-      json.host = config.host;
-      res.render('auth.ejs', json);
-    }
-  });
-});
-
-app.get('/admin', function(req, res){
-  if(!req.session.auth){
-    var json = {};
-    json.err = 0;
-    res.redirect('/auth?source=admin');
-  }
-  else{
-    dbclient.getAllRooms(function(reply){
-      var json = {};
-      json.rooms = reply;
-      json.auth = 1;
-      json.err = 0;
-      json.twiNumber = config.twiNumber;
-      json.host = config.host;
-      res.render('threshold.ejs', json);
-    });
-  }
-});
-
-app.get('/threshold', function(req, res){
-  var json = {};
-  switch(req.query.err){
-    case 1:
-      json.err = 1;
-      json.errmsg = 'Room exists!';
-      break;
-    case 2:
-      json.err = 1;
-      json.errmsg = 'Room does not exists!';
-      break;
-    default:
-      json.err = 0;
-  }
-
-  dbclient.getAllRooms(function(reply){
-    json.rooms = reply;
-    json.auth = 0;
-    json.twiNumber = config.twiNumber;
-    json.host = config.host;
-    res.render('threshold.ejs', json);
-  });
-});
-
-app.post('/room', function(req, res){
-  var body = req.body;
-  if(body.nameInput && body.numberInput){
-    createSSERoomRoute(body.nameInput);
-    dbclient.createRoom(body.numberInput, body.nameInput, function(state){
-      if(state){
-        res.redirect('/room?r=' + body.nameInput);
-      }
-      else{
-        res.redirect('/threshold?err=1');
-      }
-    });
-  }
-  else if(body.snameInput && body.snumberInput){
-    dbclient.subscribeRoom(body.snumberInput, body.snameInput, function(){
-      res.redirect('/room?r=' + body.snameInput);
-    });
-  }
-});
-
-app.get('/room', function(req, res){
-  if(req.query.r){
-    sendMessages(res, req.query.r);
-  }
-  else{
-    res.redirect('/threshold?err=2');
-  }
-});
-
-app.get('/delete', function(req, res){
-  if(!req.session.auth){
-    res.redirect('/threshold?err=3');
-  }
-  else{
-    dbclient.destroyRoom(req.query.r, function(){
-      res.redirect('/admin');
-      destroySSERoomRoute(req.query.r);
-    });
-  }
-});
-
-/* TODO need to create a way of namespacing sockets so not emitting every message
- * TODO to every client connected */
-app.get('/sms', function(req, res){
-  if(req.query.clear == 1){
-    if(!req.query.room){
-      res.send(400);
-    }
-    else{
-      console.log('Deleting SMS list.');
-      dbclient.clearSMSList(req.query.room);
-      res.send(204);
-    }
-  }
-  else if(req.query.clear == 2){
-    console.log('Flushing Database');
-    dbclient.flushDb();
-    res.send(204);
-  }
-  else{
-    handleText(req, res);
-  }
-});
 
 
 var setLogging = function(){
@@ -218,11 +79,11 @@ var handleText = function(req, res){
     var tres = new twilio.TwimlResponse();
     if(!room){
       tres.message('You are not subscribed to a room.');
-      res.send(tres.toString());
+      res.send(tres);
     }
     else{
       tres.message('Message Forwarded to ' + room + '!');
-      res.send(tres.toString());
+      res.send(tres);
 
       var time = (new Date()).getTime();
       var json = { msg: msg, time: time, user: from, room: room, };
@@ -272,4 +133,147 @@ var destroySSERoomRoute = function(room){
       return;
     }
   }
+};
+
+var addRoutes = function(){
+  app.get('/auth', function(req, res){
+    var json = {};
+    json.err = 0;
+    json.host = config.host;
+
+    if(req.session.auth){
+      res.redirect('/admin');
+    }
+    else if(req.query.source){
+      req.session.source = req.query.source;
+      res.render('auth.ejs', json);
+    }
+    else{
+      req.session.source = 'admin';
+      res.render('auth.ejs', json);
+    }
+  });
+
+  app.post('/auth', function(req, res){
+    var user = req.body.inputUser, pass = req.body.inputPass;
+    auth.authenticate(user, pass, config.authConnString, function(auth){
+      if(auth){
+        req.session.auth = 1;
+        res.redirect('/' + req.session.source);
+      }
+      else{
+        var json = {};
+        json.err = 1;
+        json.host = config.host;
+        res.render('auth.ejs', json);
+      }
+    });
+  });
+
+  app.get('/admin', function(req, res){
+    if(!req.session.auth){
+      var json = {};
+      json.err = 0;
+      res.redirect('/auth?source=admin');
+    }
+    else{
+      dbclient.getAllRooms(function(reply){
+        var json = {};
+        json.rooms = reply;
+        json.auth = 1;
+        json.err = 0;
+        json.twiNumber = config.twiNumber;
+        json.host = config.host;
+        res.render('threshold.ejs', json);
+      });
+    }
+  });
+
+  app.get('/threshold', function(req, res){
+    var json = {};
+    switch(req.query.err){
+      case 1:
+        json.err = 1;
+        json.errmsg = 'Room exists!';
+        break;
+      case 2:
+        json.err = 1;
+        json.errmsg = 'Room does not exists!';
+        break;
+      default:
+        json.err = 0;
+    }
+
+    dbclient.getAllRooms(function(reply){
+      json.rooms = reply;
+      json.auth = 0;
+      json.twiNumber = config.twiNumber;
+      json.host = config.host;
+      res.render('threshold.ejs', json);
+    });
+  });
+
+  app.post('/room', function(req, res){
+    var body = req.body;
+    if(body.nameInput && body.numberInput){
+      createSSERoomRoute(body.nameInput);
+      dbclient.createRoom(body.numberInput, body.nameInput, function(state){
+        if(state){
+          res.redirect('/room?r=' + body.nameInput);
+        }
+        else{
+          res.redirect('/threshold?err=1');
+        }
+      });
+    }
+    else if(body.snameInput && body.snumberInput){
+      dbclient.subscribeRoom(body.snumberInput, body.snameInput, function(){
+        res.redirect('/room?r=' + body.snameInput);
+      });
+    }
+  });
+
+  app.get('/room', function(req, res){
+    if(req.query.r){
+      sendMessages(res, req.query.r);
+    }
+    else{
+      res.redirect('/threshold?err=2');
+    }
+  });
+
+  app.get('/delete', function(req, res){
+    if(!req.session.auth){
+      res.redirect('/threshold?err=3');
+    }
+    else{
+      dbclient.destroyRoom(req.query.r, function(){
+        res.redirect('/admin');
+        destroySSERoomRoute(req.query.r);
+      });
+    }
+  });
+
+  /* TODO need to create a way of namespacing sockets so not emitting every message
+   * TODO to every client connected */
+  app.get('/sms', twilio.webhook(config.twiAuthSid), function(req, res){
+    if(req.query.clear == 1){
+      if(!req.query.room){
+        res.send(400);
+      }
+      else{
+        console.log('Deleting SMS list.');
+        dbclient.clearSMSList(req.query.room);
+        res.send(204);
+      }
+    }
+    else if(req.query.clear == 2){
+      console.log('Flushing Database');
+      dbclient.flushDb();
+      res.send(204);
+    }
+    else{
+      handleText(req, res);
+    }
+  });
 };
