@@ -242,7 +242,6 @@ var createSSERoomRoute = function(room){
 var routeCreateCallback = function(req, res){
   var room = (req.url.split('/'))[2];
   req.socket.setTimeout(Infinity);
-  console.log("SSE doorway connected to " + room);
 
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
@@ -254,8 +253,8 @@ var routeCreateCallback = function(req, res){
   var index = dbclient.addMsgSubListener(function(msg){
     var json = JSON.parse(msg);
 
-    if(room === room.msg){
-      sendSEE(res, msg);
+    if(room === json.room){
+      sendSSE(res, msg);
     }
   });
 

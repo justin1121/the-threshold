@@ -42,15 +42,14 @@
     $(document).ready(function(){
       convertTimes();
 
-      var ws = new WebSocket('ws://<%= host %>');
-      ws.onmessage = function(event){
+      var sse = new EventSource('/room/<%= room %>');
+      sse.onmessage = function(event){
         var data = JSON.parse(event.data);
-        if(data.room === '<%= room %>'){
-          var li = $('<li class="list-group-item">').text(data.msg);
-          var span = $('<span class="badge">').text(getTimeString(data.time));
-          li.prepend(span);
-          $('#smslist').prepend(li);
-        }
+
+        var li = $('<li class="list-group-item">').text(data.msg);
+        var span = $('<span class="badge">').text(getTimeString(data.time));
+        li.prepend(span);
+        $('#smslist').prepend(li);
       };
     });
 

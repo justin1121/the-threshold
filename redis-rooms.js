@@ -4,8 +4,9 @@
 var redis = require('redis');
 
 
-var rclient;
-var msgSubClient;
+var rclient = null;
+var msgSubClient = null;
+var msgSubListeners = [];
 
 var connectDb = function(dbport, dbhost, cb){
   rclient = redis.createClient(dbport, dbhost);
@@ -14,37 +15,38 @@ var connectDb = function(dbport, dbhost, cb){
       throw err;
     }
     console.log('Connected to Redis at', dbhost + ':', dbport);
-
-    msgSubClient = redis.createClient(dbport, dbhost);
-
-    msgSubClient.on('connect', function(err){
-      if(err){
-        throw err;
-      }
-
-      msgSubClient.subscribe('txtMessages');
-
-      msgSubClient.on('message', function(chl, msg){
-        if(chl === 'txtMessages'){
-          var json = JSON.parse(msg);
-          storeMessage(json.room, json.msg, json.time);
-        }
-      });
-
-      msgSubClient.on('error', function(err){
-        throw err;
-      });
-    });
-
-    if(cb){
-      cb();
-    }
+    connectMsgSub(dbport, dbhost, cb);
   });
 
   rclient.on('error', function(err){
     throw err;
   });
 
+};
+
+var connectMsgSub = function(dbport, dbhost, cb){
+  msgSubClient = redis.createClient(dbport, dbhost);
+  msgSubClient.on('connect', function(err){
+    if(err){
+      throw err;
+    }
+
+    msgSubClient.subscribe('txtMessages');
+    msgSubClient.on('message', function(chl, msg){
+      if(chl === 'txtMessages'){
+        var json = JSON.parse(msg);
+        storeMessage(json.room, json.msg, json.time);
+      }
+    });
+
+    msgSubClient.on('error', function(err){
+      throw err;
+    });
+
+    if(cb){
+      cb();
+    }
+  });
 };
 
 var createRoom = function(user, room, cb){
@@ -198,6 +200,8 @@ var publishTxtMessage = function(msg){
 };
 
 var addMsgSubListener = function(cb){
+  var listener;
+
   msgSubClient.on('message', listener = function(chl, msg){
     if(chl === 'txtMessages'){
       if(cb){
@@ -211,7 +215,7 @@ var addMsgSubListener = function(cb){
 };
 
 var removeMsgSubListener = function(index){
-  msgSubClient.removeListener('txtMessages', msgSubListeners[index]);
+  msgSubClient.removeListener('message', msgSubListeners[index]);
   msgSubListeners.splice(index, 1);
 };
 
