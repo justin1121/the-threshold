@@ -5,6 +5,7 @@ var redis = require('redis');
 
 
 var rclient;
+var msgSubClient;
 
 var connectDb = function(dbport, dbhost, cb){
   rclient = redis.createClient(dbport, dbhost);
@@ -14,7 +15,7 @@ var connectDb = function(dbport, dbhost, cb){
     }
     console.log('Connected to Redis at', dbhost + ':', dbport);
 
-    var msgSubClient = redis.createClient(dbport, dbhost);
+    msgSubClient = redis.createClient(dbport, dbhost);
 
     msgSubClient.on('connect', function(err){
       if(err){
@@ -192,6 +193,28 @@ var flushDb = function(){
   rclient.flushdb();
 };
 
+var publishTxtMessage = function(msg){
+  rclient.publish('txtMessages', msg);
+};
+
+var addMsgSubListener = function(cb){
+  msgSubClient.on('message', listener = function(chl, msg){
+    if(chl === 'txtMessages'){
+      if(cb){
+        cb(msg);
+      }
+    }
+  });
+
+  var index = msgSubListeners.push(listener);
+  return index - 1;
+};
+
+var removeMsgSubListener = function(index){
+  msgSubClient.removeListener('txtMessages', msgSubListeners[index]);
+  msgSubListeners.splice(index, 1);
+};
+
 exports.clearSMSList = clearSMSList;
 exports.getMessages = getMessages;
 exports.unsubscribeRoom = unsubscribeRoom;
@@ -203,3 +226,7 @@ exports.flushDb = flushDb;
 exports.checkSubscription = checkSubscription;
 exports.storeMessage = storeMessage;
 exports.getAllRooms = getAllRooms;
+exports.addMsgSubListener = addMsgSubListener;
+exports.removeMsgSubListener = removeMsgSubListener;
+exports.publishTxtMessage = publishTxtMessage;
+

@@ -18,7 +18,6 @@ app.use(express.cookieParser());
 app.use(express.cookieSession({secret: '19920606', cookie: {maxAge: 3600000}}));
 
 var server         = http.createServer(app);
-var msgPubClient   = null;
 var config         = {};
 var twiClient      = null;
 var twiListNumbers = [];
@@ -46,21 +45,9 @@ conf.readConfig(function(cdata){
       });
     },
     function(callback){
-      msgPubClient = redis.createClient(config.dbport, config.dbhost);
-
-      msgPubClient.on('connect', function(err){
-        if(err){
-          throw err;
-        }
-
-        server.listen(config.port, function(){
-          console.log('Listening on ' + config.port);
-          callback(null, null);
-        });
-      });
-
-      msgPubClient.on('error', function(err){
-        throw err;
+      server.listen(config.port, function(){
+        console.log('Listening on ' + config.port);
+        callback(null, null);
       });
     }
   ]);
@@ -239,7 +226,7 @@ var handleText = function(req, res){
       var time = (new Date()).getTime();
       var json = { msg: msg, time: time, user: from, room: room, };
 
-      msgPubClient.publish('txtMessages', JSON.stringify(json));
+      dbclient.publishTxtMessage(JSON.stringify(json));
     }
   });
 };
@@ -249,33 +236,31 @@ var sendSSE = function(res, msg){
 };
 
 var createSSERoomRoute = function(room){
-  app.get('/room/' + room, function(req, res){
-    req.socket.setTimeout(Infinity);
+  app.get('/room/' + room, routeCreateCallback);
+};
 
-    var msgSubClient = redis.createClient(config.dbport, config.dbhost);
-    
-    msgSubClient.on('connect', function(err){
-      if(err){
-        throw err;
-      }
+var routeCreateCallback = function(req, res){
+  var room = (req.url.split('/'))[2];
+  req.socket.setTimeout(Infinity);
+  console.log("SSE doorway connected to " + room);
 
-      res.writeHead(200, {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive'
-      });
-      res.write('\n');
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive'
+  });
+  res.write('\n');
 
-      msgSubClient.on('error', function(err){
-        throw err;
-      });
+  var index = dbclient.addMsgSubListener(function(msg){
+    var json = JSON.parse(msg);
 
-      msgSubClient.on('message', function(chl, msg){
-        if(chl === 'txtMessages' && msg.room === room){
-          sendSSE(res, JSON.stringify(msg));
-        }
-      });
-    });
+    if(room === room.msg){
+      sendSEE(res, msg);
+    }
+  });
+
+  req.on('close', function(){
+    dbclient.removeMsgSubListener(index);
   });
 };
 
