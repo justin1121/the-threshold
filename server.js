@@ -1,15 +1,15 @@
 /* jshint node: true */
 'use strict';
 
-var http            = require('http'),
-    express         = require('express'),
-    app             = express(),
-    redis           = require('redis'),
-    twilio          = require('twilio'),
-    async           = require('async'),
-    conf            = require('./config.js'),
-    dbclient        = require('./redis-rooms.js'),
-    auth            = require('./auth.js');
+var http     = require('http'),
+    express  = require('express'),
+    app      = express(),
+    redis    = require('redis'),
+    twilio   = require('twilio'),
+    async    = require('async'),
+    conf     = require('./config.js'),
+    dbclient = require('./redis-rooms.js'),
+    auth     = require('./auth.js');
 
 app.use(express.static(__dirname + '/public'));
 app.use(express.favicon(__dirname + '/public/images/favicon.ico'));
@@ -166,6 +166,7 @@ app.get('/delete', function(req, res){
   else{
     dbclient.destroyRoom(req.query.r, function(){
       res.redirect('/admin');
+      destroySSERoomRoute(req.query.r);
     });
   }
 });
@@ -264,5 +265,11 @@ var routeCreateCallback = function(req, res){
 };
 
 var destroySSERoomRoute = function(room){
-  // find route in app.route and remove it 
+  for(var i = 0; i < app.routes.get.length; i++){
+    if(app.routes.get[i].path === '/room/' + room){
+      app.routes.get.splice(i, 1);  
+      console.log(app.routes);
+      return;
+    }
+  }
 };
