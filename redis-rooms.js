@@ -216,7 +216,8 @@ var addMsgSubListener = function(cb){
 
 var removeMsgSubListener = function(index){
   msgSubClient.removeListener('message', msgSubListeners[index]);
-  msgSubListeners.splice(index, 1);
+  // TODO this is dumb and this needs to be done more correctly gonna leave it for now
+  //msgSubListeners.splice(index, 1);
 };
 
 exports.clearSMSList = clearSMSList;
