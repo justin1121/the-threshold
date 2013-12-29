@@ -4,7 +4,6 @@
 var http     = require('http'),
     express  = require('express'),
     app      = express(),
-    redis    = require('redis'),
     twilio   = require('twilio'),
     async    = require('async'),
     conf     = require('./config.js'),
@@ -128,8 +127,7 @@ var routeCreateCallback = function(req, res){
 var destroySSERoomRoute = function(room){
   for(var i = 0; i < app.routes.get.length; i++){
     if(app.routes.get[i].path === '/room/' + room){
-      app.routes.get.splice(i, 1);  
-      console.log(app.routes);
+      app.routes.get.splice(i, 1);
       return;
     }
   }
@@ -254,8 +252,6 @@ var addRoutes = function(){
     }
   });
 
-  /* TODO need to create a way of namespacing sockets so not emitting every message
-   * TODO to every client connected */
   app.get('/sms', twilio.webhook(config.twiAuthSid), function(req, res){
     if(req.query.clear == 1){
       if(!req.query.room){

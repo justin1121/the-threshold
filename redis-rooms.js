@@ -216,7 +216,8 @@ var addMsgSubListener = function(cb){
 
 var removeMsgSubListener = function(index){
   msgSubClient.removeListener('message', msgSubListeners[index]);
-  // TODO this is dumb and this needs to be done more correctly gonna leave it for now
+  // TODO this is dumb and this needs to be done more correctly 
+  // TODO gonna leave it for now
   //msgSubListeners.splice(index, 1);
 };
 
