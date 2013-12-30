@@ -45,7 +45,7 @@ conf.readConfig(function(cdata){
       });
     },
     function(callback){
-      server.listen(config.port, function(){
+      server.listen(config.port, config.host, function(){
         console.log('Listening on ' + config.port);
         callback(null, null);
       });
@@ -63,7 +63,6 @@ var sendMessages = function(res, room){
   dbclient.getMessages(room, function(msgs){
     var json = {};
     json.twiNumber = config.twiNumber;
-    json.host = config.host;
     json.room = room;
     json.messTime = msgs;
     res.render('room.ejs', json);
@@ -137,7 +136,6 @@ var addRoutes = function(){
   app.get('/auth', function(req, res){
     var json = {};
     json.err = 0;
-    json.host = config.host;
 
     if(req.session.auth){
       res.redirect('/admin');
@@ -162,7 +160,6 @@ var addRoutes = function(){
       else{
         var json = {};
         json.err = 1;
-        json.host = config.host;
         res.render('auth.ejs', json);
       }
     });
@@ -181,7 +178,6 @@ var addRoutes = function(){
         json.auth = 1;
         json.err = 0;
         json.twiNumber = config.twiNumber;
-        json.host = config.host;
         res.render('threshold.ejs', json);
       });
     }
@@ -206,7 +202,6 @@ var addRoutes = function(){
       json.rooms = reply;
       json.auth = 0;
       json.twiNumber = config.twiNumber;
-      json.host = config.host;
       res.render('threshold.ejs', json);
     });
   });
